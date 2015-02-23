@@ -5,6 +5,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 from itertools import chain
+import numbers
 
 
 # I'm tired of 'fixing' imshow every time.
@@ -103,36 +104,63 @@ def show_coefs(coefs, shape, names=None):
     return fig, axes
 
 
-def plot_training(train_errs, valid_errs, score=None):
+def plot_training(train_errs=None, valid_errs=None, mistakes=None,
+                  train_epochs=None, valid_epochs=None, test_epochs=None,
+                  ntr=1, nva=1, nte=1):
     fig, ax = plt.subplots()
 
-    ax.plot(train_errs, color='#fb8072', label='Training error')
-    ax.plot(valid_errs, color='#8dd3c7', label='Validation error')
+    if train_errs is not None:
+        if train_epochs is None:
+            train_epochs = np.arange(len(train_errs))
+        ax.plot(train_epochs, np.array(train_errs)/ntr, color='#fb8072', label='Training error')
+
+    if valid_epochs is not None:
+        if valid_epochs is None:
+            valid_epochs = np.arange(len(valid_errs))
+        ax.plot(valid_epochs, np.array(valid_errs)/nva, color='#8dd3c7', label='Validation error')
 
     ax.grid(True)
     ax.set_xlabel('Epochs')
-    ax.set_ylabel('Error [%]')
-    ax.axes.yaxis.set_major_formatter(mpl.ticker.FuncFormatter(lambda x, pos: '{:.1f}'.format(x*100)))
+    ax.set_ylabel('Errors')
+    if ntr > 1:
+        ax.set_ylabel(ax.get_ylabel() + ' [%]')
+        ax.axes.yaxis.set_major_formatter(mpl.ticker.FuncFormatter(lambda x, pos: '{:.1f}'.format(x*100)))
 
-    if score:
-        ax.axhline(1-score, color='#3b8cc2', linewidth=1, linestyle='--', label='Testing error')
+    if isinstance(mistakes, numbers.Number):
+        ax.axhline(mistakes/nte, color='#3b8cc2', linewidth=1, linestyle='--', label='Testing error')
+    elif mistakes is not None:
+        if test_epochs is None and mistakes is not None:
+            test_epochs = np.arange(len(mistakes))
+        ax.plot(test_epochs, np.array(mistakes)/nte, color='#3b8cc2', linewidth=1, linestyle='--', label='Testing error')
 
     ax.legend()
 
     return fig, ax
 
-def plot_cost(train_costs, valid_costs, cost=None):
+def plot_cost(train_costs=None, valid_costs=None, cost=None,
+              train_epochs=None, valid_epochs=None, test_epochs=None):
     fig, ax = plt.subplots()
 
-    ax.plot(train_costs, color='#fb8072', label='Training cost')
-    ax.plot(valid_costs, color='#8dd3c7', label='Validation cost')
+    if train_costs is not None:
+        if train_epochs is None:
+            train_epochs = np.arange(len(train_costs))
+        ax.plot(train_epochs, np.array(train_costs), color='#fb8072', label='Training cost')
+
+    if valid_costs is not None:
+        if valid_epochs is None:
+            valid_epochs = np.arange(len(valid_costs))
+        ax.plot(valid_epochs, np.array(valid_costs), color='#8dd3c7', label='Validation cost')
 
     ax.grid(True)
     ax.set_xlabel('Epochs')
     ax.set_ylabel('Cost')
 
-    if cost:
-        ax.axhline(cost, color='#3b8cc2', linewidth=1, linestyle='--', label='Solution cost')
+    if isinstance(cost, numbers.Number):
+        ax.axhline(cost, color='#3b8cc2', linewidth=1, linestyle='--', label='Actual Cost')
+    elif cost is not None:
+        if test_epochs is None and mistakes is not None:
+            test_epochs = np.arange(len(cost))
+        ax.plot(test_epochs, np.array(cost), color='#3b8cc2', linewidth=1, linestyle='--', label='Actual Cost')
 
     ax.legend()
 

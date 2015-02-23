@@ -29,7 +29,7 @@ def imshow(im, ax=None, shape=None, bgr=False, normalize=None, *args, **kwargs):
         kwargs.setdefault('vmin', -extr)
         kwargs.setdefault('vmax',  extr)
 
-    if ax:
+    if ax is not None:
         return ax.imshow(im, *args, **kwargs)
     else:
         ret = plt.imshow(im, *args, **kwargs)
@@ -82,7 +82,7 @@ def subplotgrid_for(what, axis=True, **kwargs):
 
     # Necessary to avoid white border when using share[xy]:
     # https://github.com/matplotlib/matplotlib/issues/1789/
-    for ax in axes.flat:
+    for ax in (axes.flat if n > 1 else [axes]):
         ax.set_adjustable('box-forced')
         if not axis:
             ax.axis('off')

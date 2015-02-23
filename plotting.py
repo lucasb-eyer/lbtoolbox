@@ -8,12 +8,16 @@ from itertools import chain
 
 
 # I'm tired of 'fixing' imshow every time.
-def imshow(im, ax=None, cb=True, *args, **kwargs):
+def imshow(im, ax=None, cb=True, bgr=False, *args, **kwargs):
     extr = np.max(np.abs(im))
     kwargs.setdefault('vmin', -extr)
     kwargs.setdefault('vmax',  extr)
     kwargs.setdefault('interpolation', 'nearest')
     kwargs.setdefault('cmap', mpl.cm.Spectral_r)
+
+    if bgr:
+        im = im[:,:,::-1]
+
     if ax:
         return ax.imshow(im, *args, **kwargs)
     else:

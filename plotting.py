@@ -9,17 +9,20 @@ from itertools import chain
 
 # I'm tired of 'fixing' imshow every time.
 def imshow(im, ax=None, shape=None, bgr=False, *args, **kwargs):
-    extr = np.max(np.abs(im))
-    kwargs.setdefault('vmin', -extr)
-    kwargs.setdefault('vmax',  extr)
     kwargs.setdefault('interpolation', 'nearest')
-    kwargs.setdefault('cmap', mpl.cm.Spectral_r)
 
     if shape is not None:
         im = im.reshape(shape)
 
     if bgr:
         im = im[:,:,::-1]
+
+    # Spectral colormap only if it's not a color image
+    if len(im.shape) == 2:
+        kwargs.setdefault('cmap', mpl.cm.Spectral_r)
+        extr = np.max(np.abs(im))
+        kwargs.setdefault('vmin', -extr)
+        kwargs.setdefault('vmax',  extr)
 
     if ax:
         return ax.imshow(im, *args, **kwargs)

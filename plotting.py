@@ -8,7 +8,7 @@ from itertools import chain
 
 
 # I'm tired of 'fixing' imshow every time.
-def imshow(im, ax=None, shape=None, bgr=False, *args, **kwargs):
+def imshow(im, ax=None, shape=None, bgr=False, normalize=None, *args, **kwargs):
     kwargs.setdefault('interpolation', 'nearest')
 
     if shape is not None:
@@ -16,6 +16,11 @@ def imshow(im, ax=None, shape=None, bgr=False, *args, **kwargs):
 
     if bgr:
         im = im[:,:,::-1]
+
+    if normalize is True:
+        im = (255*(im.astype(np.float) - np.min(im))/(np.max(im)-np.min(im))).astype(np.uint8)
+    elif normalize is not None and len(normalize) == 2:
+        im = (255*(im.astype(np.float) - normalize[0])/(normalize[1]-normalize[0])).astype(np.uint8)
 
     # Spectral colormap only if it's not a color image
     if len(im.shape) == 2:

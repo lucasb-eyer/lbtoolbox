@@ -90,18 +90,14 @@ def subplotgrid_for(what, axis=True, **kwargs):
     return fig, axes
 
 
-def show_coefs(coefs, shape=(50,50)):
-    # This is hard-coded to look good for the 5-class problem.
-    # Would be easy to generalize, but meh.
-    K = coefs.shape[0]
-
-    vmax = np.max(np.abs(coefs))
-    fig, axes = plt.subplots(nrows=K, ncols=1, figsize=(2, K))
+def show_coefs(coefs, shape, names=None):
+    fig, axes = subplotgrid_for(coefs, axis=False)
     fig.suptitle('Learned coefficients of the classes', fontsize=16)
-    for i, ax in enumerate(axes.flat):
-        ax.set_adjustable('box-forced')
-        ax.axis('off')
-        im = axes[i].imshow(coefs[i,:].reshape(shape), cmap=plt.cm.Spectral, interpolation='nearest', vmin=-vmax, vmax=vmax)
+
+    for coef, ax, name in zip(coefs, axes.flat, names or [None]*len(coefs)):
+        if name is not None:
+            ax.set_title(name)
+        im = imshow(coef, ax, shape=shape)
     fig.colorbar(im, ax=axes.ravel().tolist())
 
     return fig, axes

@@ -2,6 +2,9 @@
 
 import theano as th
 import theano.tensor as T
+import numpy as np
+import os
+from zlib import crc32
 
 
 def on_gpu(fn):
@@ -18,6 +21,29 @@ def check_gpu():
     y = T.vector("y", dtype=th.config.floatX)
     z = th.function(inputs=[x, y], outputs=T.dot(x,y))
     return on_gpu(z)
+
+
+def save_model(model, fname, compress=False, hashmodel=True):
+    kwargs = {"{}-{}".format(i, p.name): p.get_value() for i, p in enumerate(model.params)}
+    if hashmodel:
+        fname += '-{}'.format(crc32('\n'.join(sorted(kwargs.keys())).encode('utf-8')))
+    if compress:
+        np.savez_compressed(fname, **kwargs)
+    else:
+        np.savez(fname, **kwargs)
+
+
+def load_model(model, fname, hashmodel=True):
+    if hashmodel:
+        pnames = ["{}-{}".format(i, p.name) for i, p in enumerate(model.params)]
+        fname += '-{}'.format(crc32('\n'.join(sorted(pnames)).encode('utf-8')))
+
+    if not fname.endswith(".npz"):
+        fname = fname + ".npz"
+
+    with np.load(fname) as ps:
+        for i, p in enumerate(model.params):
+            p.set_value(ps["{}-{}".format(i, p.name)])
 
 
 def count_params(model):

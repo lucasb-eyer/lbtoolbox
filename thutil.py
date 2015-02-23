@@ -18,3 +18,7 @@ def check_gpu():
     y = T.vector("y", dtype=th.config.floatX)
     z = th.function(inputs=[x, y], outputs=T.dot(x,y))
     return on_gpu(z)
+
+
+def count_params(model):
+    return sum(np.prod(p.get_value().shape) for p in model.params)

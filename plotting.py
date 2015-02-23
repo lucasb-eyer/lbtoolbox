@@ -8,7 +8,7 @@ from itertools import chain
 
 
 # I'm tired of 'fixing' imshow every time.
-def imshow(im, ax=None, cb=True, shape=None, bgr=False, *args, **kwargs):
+def imshow(im, ax=None, shape=None, bgr=False, *args, **kwargs):
     extr = np.max(np.abs(im))
     kwargs.setdefault('vmin', -extr)
     kwargs.setdefault('vmax',  extr)
@@ -25,7 +25,8 @@ def imshow(im, ax=None, cb=True, shape=None, bgr=False, *args, **kwargs):
         return ax.imshow(im, *args, **kwargs)
     else:
         ret = plt.imshow(im, *args, **kwargs)
-        plt.colorbar()
+        if len(im.shape) == 2:
+            plt.colorbar()
         return ret
 
 # TODO: unsure about l, maybe there's a better one!

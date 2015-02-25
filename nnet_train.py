@@ -6,10 +6,10 @@ import sys
 from lbtoolbox.thutil import save_model, load_model
 from lbtoolbox.plotting import plot_training, plot_cost
 
-class BGDTrainer(object):
+class Trainer(object):
 
-    def __init__(self, bgd, fitter=None, scorer=None):
-        self.bgd = bgd
+    def __init__(self, optim):
+        self.optim = optim
         self.trnlls, self.trcosts, self.trepochs = [], [], []
         self.vanlls, self.vaerrs, self.vaepochs = [], [], []
         self.tenlls, self.teerrs, self.teepochs = [], [], []
@@ -19,8 +19,6 @@ class BGDTrainer(object):
         self.echeck = 0
         self.e = 0
 
-        self.fitter = fitter or (lambda bgd, *args, **kwargs: bgd.fit_epoch(*args, **kwargs))
-        self.scorer = scorer or (lambda bgd, *args, **kwargs: bgd.score_epoch(*args, **kwargs))
 
     def fit(self, Xtr, ytr, Xva, yva, Xte=None, yte=None,
             lr0=1,
@@ -81,7 +79,7 @@ class BGDTrainer(object):
                 self.bestva = self.vaerrs[-1]
                 self.bestvanll = self.vanlls[-1]
                 self.echeck = self.ebest = self.e
-                save_model(self.bgd.model, savename)
+                save_model(self.optim.model, savename)
 
             # If we're not getting better for some time, reload the best
             # model so far and decrease learning-rate.
@@ -89,7 +87,7 @@ class BGDTrainer(object):
                 lr /= lr_decrease
                 nreducs += 1
                 t0 = time.clock()
-                load_model(self.bgd.model, savename)
+                load_model(self.optim.model, savename)
                 t1 = time.clock()
                 print("Best model reloaded from {} in {:.2f}s; learning-rate decayed to {}".format(self.ebest, t1-t0, lr))
                 self.echeck = self.e - recover_patience - 1
@@ -133,7 +131,7 @@ class BGDTrainer(object):
             # But also reload the best model we had.
             print("Interrupted. Reloading best model and stopping.")
             sys.stdout.flush()
-            load_model(self.bgd.model, savename)
+            load_model(self.optim.model, savename)
 
         tend = time.clock()
 
@@ -153,15 +151,15 @@ class BGDTrainer(object):
 
 
     def fit_epoch(self, X, y, lr, aug):
-        return self.bgd.fit_epoch(X, y, lr, aug)
+        return self.optim.fit_epoch(X, y, lr, aug)
 
 
     def valid_epoch(self, X, y, aug):
-        return self.bgd.score_epoch(X, y, aug, fast=True)
+        return self.optim.score_epoch(X, y, aug, fast=True)
 
 
     def test_epoch(self, X, y, aug):
-        return self.bgd.score_epoch(X, y, aug, fast=False)
+        return self.optim.score_epoch(X, y, aug, fast=False)
 
 
     def report_train(self, cost, nll, t):

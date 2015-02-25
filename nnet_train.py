@@ -89,7 +89,7 @@ class Trainer(object):
                 t0 = time.clock()
                 load_model(self.optim.model, savename)
                 t1 = time.clock()
-                print("Best model reloaded from {} in {:.2f}s; learning-rate decayed to {}".format(self.ebest, t1-t0, lr))
+                print("Best model reloaded from {e} in {t:.2f}s; lr decayed for the {n}th time, to {lr}".format(e=self.ebest, t=t1-t0, n=nreducs, lr=lr))
                 self.echeck = self.e - recover_patience - 1
 
             # If we decayed enough, it means we're not going to get

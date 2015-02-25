@@ -29,6 +29,7 @@ class BGDTrainer(object):
             recover_patience=5,
             lr_decrease=10,
             max_reducs=4,
+            min_nll_diff=1e-3,
             max_epochs=1000,
             valid_freq=1,
             test_freq=1,
@@ -74,8 +75,8 @@ class BGDTrainer(object):
                 ste = None
 
             # Save the model that performs best on the validation set.
-            # Best is defined as fewer errors or same errors but lower nll.
-            if self.vaerrs[-1] < self.bestva:  # or (self.vaerrs[-1] == self.bestva and self.vanlls[-1] < self.bestvanll):
+            # Best is: fewer errors or same errors but significantly lower nll.
+            if self.vaerrs[-1] < self.bestva or (self.vaerrs[-1] == self.bestva and self.vanlls[-1] < self.bestvanll - min_nll_diff):
                 self.bestva = self.vaerrs[-1]
                 self.bestvanll = self.vanlls[-1]
                 self.echeck = self.ebest = self.e

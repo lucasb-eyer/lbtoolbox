@@ -90,7 +90,7 @@ class BGDTrainer(object):
                 load_model(self.bgd.model, savename)
                 t1 = time.clock()
                 print("Best model reloaded from {} in {:.2f}s; learning-rate decayed to {}".format(self.ebest, t1-t0, lr))
-                self.echeck = self.e - recover_patience
+                self.echeck = self.e - recover_patience - 1
 
             # If we decayed enough, it means we're not going to get
             # any better, really.

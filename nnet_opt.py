@@ -58,7 +58,7 @@ class BatchGradDescent(object):
                 ppreds = []
                 for bx_aug in aug.augbatch_pred(bx, fast):
                     self.model.sh_x.set_value(th.sandbox.cuda.CudaNdarray(bx_aug))
-                    ppreds.append(self.fn_pred_proba())
+                    ppreds.append(self.fn_pred_proba()[:len(y)])
                 p_y_given_x = sum(ppreds)/len(ppreds)
                 nll = -np.mean(np.log(np.clip(p_y_given_x[np.arange(by.shape[0]), by], *self.nllclip)))
                 err = np.sum(np.argmax(p_y_given_x, axis=1) != by)

@@ -28,6 +28,7 @@ class BGDTrainer(object):
             patience=10,
             recover_patience=5,
             lr_decrease=10,
+            lr_decay=None,
             max_reducs=4,
             min_nll_diff=1e-3,
             max_epochs=1000,
@@ -123,6 +124,9 @@ class BGDTrainer(object):
             # That is because the cost and nll computed by the training step
             # are those *before* updating the gradient.
             self.e += 1
+
+            if lr_decay is not None:
+                lr *= lr_decay
 
         except KeyboardInterrupt:
             # Just stop the loop on keyboard interrupt.

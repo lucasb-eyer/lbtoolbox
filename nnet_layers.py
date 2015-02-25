@@ -273,8 +273,8 @@ class ReLU(object):
         fan_in = fan_in or W_shape[0]
         fan_out = fan_out or W_shape[1]
         b_shape = b_shape or (fan_out,)
-        var = np.sqrt(4/(fan_in+fan_out))
-        W.set_value(var*np.random.standard_normal(W_shape).astype(W.dtype))
+        std = np.sqrt(4/(fan_in+fan_out))
+        W.set_value(std*np.random.standard_normal(W_shape).astype(W.dtype))
         b.set_value(np.zeros(b_shape, dtype=b.dtype))
 
 
@@ -429,16 +429,15 @@ class Conv(object):
         self.outshape = (n_im, n_conv,) + tuple(i - c + 1 for i,c in zip(imshape, convshape))
 
         # Only used for initialization.
-        self.fan_in = imdepth * np.prod(imshape)
-        # TODO: verify when on coffee
-        # DONE: was stupid bullshit: n_conv * np.prod(convshape) <-- LOL
-        # BUT BUT: that's how it's done in theano?
-        self.fan_out = n_conv * np.prod(self.outshape[1:])
+        self.fan_in = imdepth * np.prod(convshape)
+        self.fan_out = n_conv * np.prod(convshape)
 
         self.W_shape = (n_conv, imdepth) + convshape
         self.b_shape = (n_conv,)
 
         # Taken from the Theano deeplearning tutorial.
+        # Should later be replaced by whatever the following nonlinearity
+        # wants to have.
         def initW(shape):
             bound = np.sqrt(6 / (self.fan_in + self.fan_out))
             return np.random.uniform(low=-bound, high=bound, size=shape)

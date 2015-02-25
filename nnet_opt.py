@@ -105,3 +105,35 @@ class MiniSGD(MinibatchOptimizer):
             outputs=[model.cost, model.nll],
             updates=[(p, p - self.sh_learningrate * gp) for p, gp in zip(model.params, g)]
         )
+
+
+class MiniMomentum(MinibatchOptimizer):
+
+    def __init__(self, model, momentum, nllclip=(1e-15, 1-1e-15)):
+        super(MiniMomentum, self).__init__(model, nllclip)
+
+        # For momentum, we need a "mirror" of each parameter, which keeps track
+        # of the "velocity" of that parameter during training.
+        self.sh_v = [
+            th.shared(np.zeros(p.get_value().shape), name='v_'+p.name)
+            for p in model.params
+        ]
+
+        g = T.grad(cost=model.cost, wrt=model.params)
+
+        # For Momentum SGD, the following training equation comes from:
+        # "On the importance of initialization and momentum in deep learning"
+        # v_e+1 = mom*v_e - lr * grad(p_e)
+        # p_e+1 = p_e + v_e+1
+
+        updates = []
+        for sh_p, gp, sh_v in zip(model.params, g, self.sh_v):
+            v = momentum * sh_v - self.sh_learningrate * gp
+            updates.append((sh_v, v))
+            updates.append((sh_p, sh_p + v))
+
+        self.fn_train = th.function(
+            inputs=[self.sh_learningrate],
+            outputs=[model.cost, model.nll],
+            updates=updates
+        )

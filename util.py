@@ -45,6 +45,7 @@ def batched_padded(batchsize, *args):
     A generator function which goes through all of `args` together,
     but in batches of size `batchsize` along the first dimension,
     and possibly pads the last batch if necessary.
+    Yields the batchsize as first entry of the tuple.
 
     batched_padded(3, np.arange(10), np.arange(10))
 
@@ -58,26 +59,23 @@ def batched_padded(batchsize, *args):
     # Assumption: all args have the same 1st dimension as the first one.
     assert(all(x.shape[0] == n for x in args))
 
-    # Unpack a single arg
-    if len(args) == 1:
-        packer = lambda arg: tuple(arg)[0]
-    else:
-        packer = tuple
-
     # First, go through all full batches.
     for i in range(n // batchsize):
-        yield packer(x[i*batchsize:(i+1)*batchsize] for x in args)
+        yield (batchsize,) + tuple(x[i*batchsize:(i+1)*batchsize] for x in args)
 
     # And now maybe return the last, padded batch.
-    if n % batchsize != 0:
+    rest = n % batchsize
+    if rest != 0:
         start = (n//batchsize)*batchsize
-        yield packer(_pad_first_dim_to(x[start:], batchsize) for x in args)
+        yield (rest,) + tuple(_pad_first_dim_to(x[start:], batchsize) for x in args)
 
 
 def batched_padded_x(batchsize, x, y):
     """
     Like `batched_padded` for `x`, but doesn't pad the last `y`, in effect
     returning a last `y` which might be shorter than `batchsize`.
+
+    Thus, because the `y` carries the batch's size, no size is returned anymore.
     """
     n = x.shape[0]
 

@@ -37,7 +37,7 @@ class BatchGradDescent(object):
 
     def fit_epoch(self, X, y, learning_rate, aug=None):
         costs, nlls = [], []
-        for bx, by in batched_padded(self.model.batchsize, X, y):
+        for _, bx, by in batched_padded(self.model.batchsize, X, y):
             if aug:
                 bx = aug.augbatch_train(bx)
             self.model.sh_x.set_value(th.sandbox.cuda.CudaNdarray(bx))
@@ -51,17 +51,22 @@ class BatchGradDescent(object):
     def score_epoch(self, X, y, aug=None, fast=False):
         nlls = []
         errs = 0
-        for bx, by in batched_padded(self.model.batchsize, X, y):
+        # Go through the training in minibatches.
+        # As long as there's https://github.com/Theano/Theano/issues/2464
+        # we need to pad the last batch.
+        for bs, bx, by in batched_padded(self.model.batchsize, X, y):
             if aug:
                 # In the case of augmentation, average all outputs of the
                 # augmenters. ("Return of the Devil in the Details", Chatfield, Simonyan, Vevaldi & Zisserman)
                 ppreds = []
                 for bx_aug in aug.augbatch_pred(bx, fast):
                     self.model.sh_x.set_value(th.sandbox.cuda.CudaNdarray(bx_aug))
-                    ppreds.append(self.fn_pred_proba()[:len(y)])
+                    # Due to the same bug as above, we need to cut off the
+                    # padded part of the last batch.
+                    ppreds.append(self.fn_pred_proba()[:bs])
                 p_y_given_x = sum(ppreds)/len(ppreds)
-                nll = -np.mean(np.log(np.clip(p_y_given_x[np.arange(by.shape[0]), by], *self.nllclip)))
-                err = np.sum(np.argmax(p_y_given_x, axis=1) != by)
+                nll = -np.mean(np.log(np.clip(p_y_given_x[np.arange(bs), by[:bs]], *self.nllclip)))
+                err = np.sum(np.argmax(p_y_given_x[:bs], axis=1) != by[:bs])
             else:
                 self.model.sh_x.set_value(th.sandbox.cuda.CudaNdarray(bx))
                 self.model.sh_y.set_value(by)

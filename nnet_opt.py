@@ -132,6 +132,40 @@ class MiniMomentum(MinibatchOptimizer):
             updates.append((sh_v, v))
             updates.append((sh_p, sh_p + v))
 
+
+class MiniAdaGrad(MinibatchOptimizer):
+    """
+    Implements Duchi's "Adaptive Subgradient" method, aka AdaGrad.
+    Chris Dyer's "Notes on AdaGrad" are pretty awesome for practical purposes.
+
+    TL;DR: AdaGrad doesn't need additional parameters and makes the
+           optimization much less sensitive to the learning-rate!
+
+    (Well, it needs `eps`, but that one hardly matters at all.)
+    """
+
+    def __init__(self, model, eps=1e-5, nllclip=(1e-15, 1-1e-15)):
+        super(MiniAdaGrad, self).__init__(model, nllclip)
+
+        # Adagrad needs to accumulate the square gradient of each parameter.
+        # I wonder if this won't explode at some point? Probably should fully
+        # read the original paper!
+        self.sh_g2 = [
+            th.shared(eps*np.ones_like(p.get_value()), broadcastable=p.broadcastable, name='g2_'+p.name)
+            for p in model.params
+        ]
+
+        g = T.grad(cost=model.cost, wrt=model.params)
+
+        updates = []
+        for sh_p, gp, sh_g2 in zip(model.params, g, self.sh_g2):
+            g2 = sh_g2 + gp*gp
+            updates.append((sh_g2, g2))
+            updates.append((sh_p, sh_p - self.sh_learningrate/T.sqrt(g2) * gp))
+            # Instead of adding eps inside the square-root like most
+            # implementations do, I just initialize `g2` to eps, that should
+            # have the same effect, but cheaper.
+
         self.fn_train = th.function(
             inputs=[self.sh_learningrate],
             outputs=[model.cost, model.nll],

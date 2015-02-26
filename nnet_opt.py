@@ -108,29 +108,49 @@ class MiniSGD(MinibatchOptimizer):
 
 
 class MiniMomentum(MinibatchOptimizer):
+    """
+    Implements both the "Classical Momentum (CM)" and "Nesterov's
+    Accelerated Gradient (NAG)" which are explained in further detail in
 
-    def __init__(self, model, momentum, nllclip=(1e-15, 1-1e-15)):
+    "On the importance of initialization and momentum in deep learning"
+
+    But the equation for NAG has been reshuffled by Nicolas Boulanger in
+
+    https://github.com/lisa-lab/pylearn2/pull/136#issuecomment-10381617
+
+    for easier implementation in Theano.
+
+    TL;DR: Nesterov allows for larger momentum to be used, making it better.
+           Very finicky parameter-selection.
+    """
+
+    def __init__(self, model, momentum, nesterov=False, nllclip=(1e-15, 1-1e-15)):
         super(MiniMomentum, self).__init__(model, nllclip)
 
         # For momentum, we need a "mirror" of each parameter, which keeps track
         # of the "velocity" of that parameter during training.
         self.sh_v = [
-            th.shared(np.zeros(p.get_value().shape), name='v_'+p.name)
+            th.shared(np.zeros_like(p.get_value()), broadcastable=p.broadcastable, name='v_'+p.name)
             for p in model.params
         ]
 
         g = T.grad(cost=model.cost, wrt=model.params)
 
-        # For Momentum SGD, the following training equation comes from:
-        # "On the importance of initialization and momentum in deep learning"
-        # v_e+1 = mom*v_e - lr * grad(p_e)
-        # p_e+1 = p_e + v_e+1
-
         updates = []
         for sh_p, gp, sh_v in zip(model.params, g, self.sh_v):
             v = momentum * sh_v - self.sh_learningrate * gp
             updates.append((sh_v, v))
-            updates.append((sh_p, sh_p + v))
+
+            if not nesterov:
+                updates.append((sh_p, sh_p + v))
+            else:
+                updates.append((sh_p, sh_p + momentum * v - self.sh_learningrate * gp))
+
+        self.fn_train = th.function(
+            inputs=[self.sh_learningrate],
+            outputs=[model.cost, model.nll],
+            updates=updates
+        )
 
 
 class MiniAdaGrad(MinibatchOptimizer):

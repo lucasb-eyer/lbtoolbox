@@ -170,6 +170,7 @@ class MiniAdaGrad(MinibatchOptimizer):
         # Adagrad needs to accumulate the square gradient of each parameter.
         # I wonder if this won't explode at some point? Probably should fully
         # read the original paper!
+        # Edit: Matt Zeiler seems to agree cf. AdaDelta.
         self.sh_g2 = [
             th.shared(eps*np.ones_like(p.get_value()), broadcastable=p.broadcastable, name='g2_'+p.name)
             for p in model.params
@@ -190,4 +191,67 @@ class MiniAdaGrad(MinibatchOptimizer):
             inputs=[self.sh_learningrate],
             outputs=[model.cost, model.nll],
             updates=updates
+        )
+
+
+class MiniAdaDelta(MinibatchOptimizer):
+    """
+    Implements Matt Zeiler's "Adaptive Learningrate" method, aka AdaDelta.
+    The paper itself is really neat, and both very convincing and practical.
+
+    TL;DR: 1. AdaGrad quickly anneals, AdaDelta doesn't. (No proof.)
+           2. AdaGrad *is* sensitive to learning-rate, AdaGrad not so much. (Table 1.)
+           3. AdaGrad includes 2nd-order approximation. (3.2)
+    """
+
+    def __init__(self, model, rho=0.95, eps=1e-6, nllclip=(1e-15, 1-1e-15)):
+        """
+        `model`: The model for wich to compile functions.
+
+        `rho`: The "momentum decay" of AdaDelta. The paper tests three values
+               on MNIST: 0.9, 0.95 and 0.99, they don't change the score much.
+               The paper also uses the same values for a speech task.
+
+        `eps`: A regularization term only used to avoid singularities. The
+               paper tests four values on MNIST: 1e-2, 1e-4, 1e-6, 1e-8;
+               all of them work pretty well.
+
+        `nllclip`: This should disappear soon. It's a hack.
+        """
+        super(MiniAdaDelta, self).__init__(model, nllclip)
+
+        # Similarly to Adagrad, AdaDelta accumulates the square gradient of
+        # each parameter, it just exponentially decays the old value,
+        # effectively only summing over a recent window.
+        self.sh_g2 = [
+            th.shared(np.zeros_like(p.get_value()), broadcastable=p.broadcastable, name='g2_'+p.name)
+            for p in model.params
+        ]
+
+        # Similarly to momentum, AdaDelta accumulates previous update values.
+        # This also happens in a decaying fashion, so as to cover a window.
+        self.sh_delta2 = [
+            th.shared(np.zeros_like(p.get_value()), broadcastable=p.broadcastable, name='d2_'+p.name)
+            for p in model.params
+        ]
+
+        g = T.grad(cost=model.cost, wrt=model.params)
+
+        updates = []
+        for sh_p, gp, sh_g2, sh_d2 in zip(model.params, g, self.sh_g2, self.sh_delta2):
+            g2 = rho*sh_g2 + (1-rho)*gp*gp
+            up = T.sqrt((sh_d2+eps) / (g2+eps)) * gp
+            d2 = rho*sh_d2 + (1-rho)*up*up
+            updates.append((sh_g2, g2))
+            updates.append((sh_p, sh_p - up))
+            updates.append((sh_d2, d2))
+
+        # Notice how we never used the learning-rate!
+        # We thus need to tell Theano that we're aware of the fact
+        # that we're not using it.
+        self.fn_train = th.function(
+            inputs=[self.sh_learningrate],
+            outputs=[model.cost, model.nll],
+            updates=updates,
+            on_unused_input='ignore'
         )

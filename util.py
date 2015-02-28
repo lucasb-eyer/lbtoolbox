@@ -3,6 +3,7 @@
 import numpy as _np
 
 import contextlib
+import numbers
 
 # Thanks http://stackoverflow.com/a/2891805/2366315
 @contextlib.contextmanager
@@ -89,6 +90,28 @@ def batched_padded_x(batchsize, x, y):
     if n % batchsize != 0:
         start = (n//batchsize)*batchsize
         yield _pad_first_dim_to(x[start:], batchsize), y[start:]
+
+
+# Blatantly "inspired" by sklearn, for when that's not available.
+def check_random_state(seed):
+    """
+    Turn `seed` into a `np.random.RandomState` instance.
+
+    - If `seed` is `None`, return the `RandomState` singleton used by `np.random`.
+    - If `seed` is an `int`, return a new `RandomState` instance seeded with `seed`.
+    - If `seed` is already a `RandomState` instance, return it.
+    - Otherwise raise `ValueError`.
+    """
+    if seed is None or seed is _np.random:
+        return _np.random.mtrand._rand
+
+    if isinstance(seed, (numbers.Integral, _np.integer)):
+        return _np.random.RandomState(seed)
+
+    if isinstance(seed, _np.random.RandomState):
+        return seed
+
+    raise ValueError('{!r} cannot be used to seed a numpy.random.RandomState instance'.format(seed))
 
 
 def printnow(f, fmt, *args, **kwargs):

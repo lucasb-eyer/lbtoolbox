@@ -4,6 +4,8 @@ import numpy as np
 import theano
 import theano.tensor as T
 
+from lbtoolbox.util import check_random_state
+
 floatX = theano.config.floatX
 
 # TODO: Formalize!
@@ -221,14 +223,15 @@ class Tanh(object):
         self.outshape = inshape
 
 
-    def init_incoming(self, W, b, W_shape, b_shape=None, fan_in=None, fan_out=None):
+    def init_incoming(self, W, b, W_shape, b_shape=None, fan_in=None, fan_out=None, seed=None):
         # "Xavier" initialization:
         # Understanding the difficulty of training deep feedforward neural networks
+        rng = check_random_state(seed)
         fan_in = fan_in or W_shape[0]
         fan_out = fan_out or W_shape[1]
         b_shape = b_shape or (fan_out,)
         s = 1 if not self.sigmoid else 4
-        W.set_value(np.random.uniform(
+        W.set_value(rng.uniform(
             low =-s*np.sqrt(6 / (fan_in+fan_out)),
             high= s*np.sqrt(6 / (fan_in+fan_out)),
             size=W_shape).astype(W.dtype))
@@ -267,14 +270,15 @@ class ReLU(object):
         self.outshape = inshape
 
 
-    def init_incoming(self, W, b, W_shape, b_shape=None, fan_in=None, fan_out=None):
+    def init_incoming(self, W, b, W_shape, b_shape=None, fan_in=None, fan_out=None, seed=None):
         # From "Delving Deep into Rectifiers"
         # but using the mean of fan_in and fan_out, i.e. (fi+fo)/2
+        rng = check_random_state(seed)
         fan_in = fan_in or W_shape[0]
         fan_out = fan_out or W_shape[1]
         b_shape = b_shape or (fan_out,)
         std = np.sqrt(4/(fan_in+fan_out))
-        W.set_value(std*np.random.standard_normal(W_shape).astype(W.dtype))
+        W.set_value(std*rng.standard_normal(W_shape).astype(W.dtype))
         b.set_value(np.zeros(b_shape, dtype=b.dtype))
 
 

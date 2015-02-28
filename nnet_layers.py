@@ -200,22 +200,27 @@ class Tanh(object):
     Typical tanh nonlinearity layer of oldschool nnets.
     """
 
-    def __init__(self, X, inshape=None, sigmoid=False):
+    def __init__(self, X, inshape=None, sigmoid=False, init='Xavier'):
         """
         Creates a theano expression `self.out` which computes the elementwise
         application of the tanh function:
 
         out = tanh(X)
 
-        :type X: theano.tensor.TensorType
-        :param X: Symbolic variable that is the input of the layer, i.e. a minibatch.
+        `X`: Symbolic variable that is the input of the layer, i.e. a minibatch.
 
-        :type inshape: tuple
-        :param inshape: Size of the input. Only used for setting `outshape` to it.
+        `inshape`: Size of the input. Only used for setting `outshape` to it.
 
-        :type sigmoid: boolean
-        :param sigmoid: Whether to use the sigmoidal instead of tanh.
+        `sigmoid`: Whether to use the sigmoidal instead of tanh.
+
+        `init`: The initialization technique to use for the preceding
+                weightlayer. Currently available techniques are:
+            - `'XavierU'`: The one from "Understanding the difficulty of training deep feedforward neural networks."
+            - `'Xavier'`: The same, but realized as in "Delving Deep into Rectifiers." i.e. using a normal distribution.
+            - A number: Standard deviation (sigma) of the normal distribution
+                        to sample from.
         """
+        self.init = init
         self.sigmoid = sigmoid
         self.X = X
         self.Ws = self.bs = self.params = []
@@ -224,18 +229,19 @@ class Tanh(object):
 
 
     def init_incoming(self, W, b, W_shape, b_shape=None, fan_in=None, fan_out=None, seed=None):
-        # "Xavier" initialization:
-        # Understanding the difficulty of training deep feedforward neural networks
         rng = check_random_state(seed)
         fan_in = fan_in or W_shape[0]
         fan_out = fan_out or W_shape[1]
-        b_shape = b_shape or (fan_out,)
+        fan_mean = (fan_in + fan_out)/2
         s = 1 if not self.sigmoid else 4
-        W.set_value(rng.uniform(
-            low =-s*np.sqrt(6 / (fan_in+fan_out)),
-            high= s*np.sqrt(6 / (fan_in+fan_out)),
-            size=W_shape).astype(W.dtype))
-        b.set_value(np.zeros(b_shape, dtype=b.dtype))
+        if self.init == "Xavier":
+            w = s*np.sqrt(1/fan_mean)*rng.standard_normal(W_shape)
+        elif self.init == "XavierU":
+            w = s*rng.uniform(-np.sqrt(6/fan_mean), np.sqrt(6/fan_mean), W_shape)
+        else:
+            w = s*self.init*rng.standard_normal(W_shape)
+        W.set_value(w.astype(W.dtype))
+        b.set_value(np.zeros(b_shape or fan_out, dtype=b.dtype))
 
 
 class ReLU(object):
@@ -243,7 +249,7 @@ class ReLU(object):
     Typical ReLU nonlinearity layer of oldschool nnets.
     """
 
-    def __init__(self, X, inshape=None, leak=0, cap=None):
+    def __init__(self, X, inshape=None, leak=0, cap=None, init='PReLU'):
         """
         Creates a theano expression `self.out` which computes the elementwise
         application of the ReLU or leaky ReLU function:
@@ -260,8 +266,17 @@ class ReLU(object):
                If `None` (the default), do not apply any capping.
 
         `inshape`: Size of the input. Only used for setting `outshape` to it.
+
+        `init`: The initialization technique to use for the preceding
+                weightlayer. Currently available techniques are:
+            - `'XavierU'`: The one from "Understanding the difficulty of training deep feedforward neural networks."
+            - `'Xavier'`: The same, but realized as in "Delving Deep into Rectifiers."
+            - `'PReLU'`: The one from "Delving Deep into Rectifiers."
+            - A number: Standard deviation (sigma) of the normal distribution
+                        to sample from.
         """
         self.X = X
+        self.init = init
         # TODO: if `leak` is a Theano variable, add it to parameters.
         self.Ws = self.bs = self.params = []
         self.out = T.maximum(leak*X, X)
@@ -271,15 +286,20 @@ class ReLU(object):
 
 
     def init_incoming(self, W, b, W_shape, b_shape=None, fan_in=None, fan_out=None, seed=None):
-        # From "Delving Deep into Rectifiers"
-        # but using the mean of fan_in and fan_out, i.e. (fi+fo)/2
         rng = check_random_state(seed)
         fan_in = fan_in or W_shape[0]
         fan_out = fan_out or W_shape[1]
-        b_shape = b_shape or (fan_out,)
-        std = np.sqrt(4/(fan_in+fan_out))
-        W.set_value(std*rng.standard_normal(W_shape).astype(W.dtype))
-        b.set_value(np.zeros(b_shape, dtype=b.dtype))
+        fan_mean = (fan_in + fan_out)/2
+        if self.init == "Xavier":
+            w = np.sqrt(1/fan_mean)*rng.standard_normal(W_shape)
+        elif self.init == "PReLU":
+            w = np.sqrt(2/fan_mean)*rng.standard_normal(W_shape)
+        elif self.init == "XavierU":
+            w = rng.uniform(-np.sqrt(6/fan_mean), np.sqrt(6/fan_mean), W_shape)
+        else:
+            w = self.init*rng.standard_normal(W_shape)
+        W.set_value(w.astype(W.dtype))
+        b.set_value(np.zeros(b_shape or fan_out, dtype=b.dtype))
 
 
 class FullyConnected(object):

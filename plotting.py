@@ -106,8 +106,11 @@ def show_coefs(coefs, shape, names=None):
 
 def plot_training(train_errs=None, valid_errs=None, mistakes=None,
                   train_epochs=None, valid_epochs=None, test_epochs=None,
-                  ntr=1, nva=1, nte=1):
-    fig, ax = plt.subplots()
+                  ntr=1, nva=1, nte=1, axis=None):
+    if axis is None:
+        fig, ax = plt.subplots()
+    else:
+        ax = axis
 
     if train_errs is not None:
         if train_epochs is None:
@@ -135,11 +138,18 @@ def plot_training(train_errs=None, valid_errs=None, mistakes=None,
 
     ax.legend()
 
-    return fig, ax
+    if axis is None:
+        return fig, ax
+    else:
+        return ax
 
 def plot_cost(train_costs=None, valid_costs=None, cost=None,
-              train_epochs=None, valid_epochs=None, test_epochs=None):
-    fig, ax = plt.subplots()
+              train_epochs=None, valid_epochs=None, test_epochs=None,
+              axis=None):
+    if axis is None:
+        fig, ax = plt.subplots()
+    else:
+        ax = axis
 
     if train_costs is not None:
         if train_epochs is None:
@@ -164,5 +174,9 @@ def plot_cost(train_costs=None, valid_costs=None, cost=None,
 
     ax.legend()
 
-    return fig, ax
+
+    if axis is None:
+        return fig, ax
+    else:
+        return ax
 

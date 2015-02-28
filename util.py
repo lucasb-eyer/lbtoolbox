@@ -90,3 +90,18 @@ def batched_padded_x(batchsize, x, y):
         start = (n//batchsize)*batchsize
         yield _pad_first_dim_to(x[start:], batchsize), y[start:]
 
+
+def printnow(f, fmt, *args, **kwargs):
+    """
+    Formats the string `fmt` with the given `args` and `kwargs`, then writes it
+    (including a final newline) to `f` and flushes f.
+
+    If `f` is `None`, nothing is done.
+    """
+    if f is None:
+        return
+
+    f.write(fmt.format(*args, **kwargs))
+    if not fmt.endswith('\n'):
+        f.write('\n')
+    f.flush()

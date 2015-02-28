@@ -5,8 +5,10 @@ import sys
 
 import numpy as np
 
+from lbtoolbox.util import printnow
 from lbtoolbox.thutil import save_model, load_model
 from lbtoolbox.plotting import plot_training, plot_cost
+
 
 class Trainer(object):
 
@@ -53,7 +55,8 @@ class Trainer(object):
             test_freq=1,
             skip_initial=False,
             skip_final=False,
-            savename='/tmp/model'):
+            savename='/tmp/model',
+            progress=sys.stdout):
         lr = lr0
         nreducs = 0
         tstart = time.clock()
@@ -110,13 +113,13 @@ class Trainer(object):
                 t0 = time.clock()
                 load_model(self.optim.model, savename)
                 t1 = time.clock()
-                print("Best model reloaded from {e} in {t:.2f}s; lr decayed for the {n}. time, to {lr}".format(e=self.ebest, t=t1-t0, n=nreducs, lr=lr))
+                printnow(progress, "Best model reloaded from {e} in {t:.2f}s; lr decayed for the {n}. time, to {lr}", e=self.ebest, t=t1-t0, n=nreducs, lr=lr)
                 self.echeck = self.e - (patience-recover_patience) - 1
 
             # If we decayed enough, it means we're not going to get
             # any better, really.
             if nreducs > max_reducs:
-                print("Learning-rate dropped {} times. I just lost all my patience.".format(nreducs))
+                printnow(progress, "Learning-rate dropped {} times. I just lost all my patience.", nreducs)
                 break
 
             t0 = time.clock()
@@ -131,8 +134,7 @@ class Trainer(object):
             s_tr = self.report_train(cost, nll, t1 - t0)
 
             # This just formats all of them nicely together and prints it.
-            print(self.report_epoch(self.e, s_tr, sva, ste))
-            sys.stdout.flush()
+            printnow(progress, self.report_epoch(self.e, s_tr, sva, ste))
 
             # And only now did we advance an epoch.
             # That is because the cost and nll computed by the training step
@@ -145,26 +147,23 @@ class Trainer(object):
         except KeyboardInterrupt:
             # Just stop the loop on keyboard interrupt.
             # But also reload the best model we had.
-            print("Interrupted. Reloading best model and stopping.")
-            sys.stdout.flush()
+            printnow(progress, "Interrupted. Reloading best model and stopping.")
             load_model(self.optim.model, savename)
 
         tend = time.clock()
         self.t += tend-tstart
 
-        print('Best in validation@{ebest}e ({t:.1f}s in total, i.e. {spe:.1f}s/e)'.format(
+        printnow(progress, 'Best in validation@{ebest}e ({t:.1f}s in total, i.e. {spe:.1f}s/e)',
             ebest = self.ebest,
             t = tend - tstart,
             spe = (tend - tstart)/e
-        ))
-        sys.stdout.flush()
+        )
 
         if Xte is not None and not skip_final:
             t0 = time.clock()
             nll, err = self.test_epoch(Xte, yte, aug=aug)
             t1 = time.clock()
-            print('Final test', self.report_score(nll, err, t1-t0, len(yte)), ' i.e. {:.2%} score'.format(1 - err/len(yte)))
-            sys.stdout.flush()
+            printnow(progress, 'Final test {} i.e. {:.2%} score', self.report_score(nll, err, t1-t0, len(yte)), 1 - err/len(yte))
 
 
     def fit_epoch(self, X, y, lr, aug):

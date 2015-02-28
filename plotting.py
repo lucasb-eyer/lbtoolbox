@@ -125,7 +125,7 @@ def plot_training(train_errs=None, valid_errs=None, mistakes=None,
     ax.grid(True)
     ax.set_xlabel('Epochs')
     ax.set_ylabel('Errors')
-    if ntr > 1:
+    if ntr > 1 or nva > 1 or nte > 1:
         ax.set_ylabel(ax.get_ylabel() + ' [%]')
         ax.axes.yaxis.set_major_formatter(mpl.ticker.FuncFormatter(lambda x, pos: '{:.1f}'.format(x*100)))
 

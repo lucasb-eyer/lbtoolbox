@@ -170,6 +170,7 @@ class MiniAdaGrad(MinibatchOptimizer):
         # Adagrad needs to accumulate the square gradient of each parameter.
         # I wonder if this won't explode at some point? Probably should fully
         # read the original paper!
+        # Edit: RMSProp fixes exactly that.
         # Edit: Matt Zeiler seems to agree cf. AdaDelta.
         self.sh_g2 = [
             th.shared(eps*np.ones_like(p.get_value()), broadcastable=p.broadcastable, name='g2_'+p.name)
@@ -183,6 +184,40 @@ class MiniAdaGrad(MinibatchOptimizer):
             g2 = sh_g2 + gp*gp
             updates.append((sh_g2, g2))
             updates.append((sh_p, sh_p - self.sh_learningrate/T.sqrt(g2) * gp))
+            # Instead of adding eps inside the square-root like most
+            # implementations do, I just initialize `g2` to eps, that should
+            # have the same effect, but cheaper.
+
+        self.fn_train = th.function(
+            inputs=[self.sh_learningrate],
+            outputs=[model.cost, model.nll],
+            updates=updates
+        )
+
+
+class MiniRMSProp(MinibatchOptimizer):
+    """
+    Implements Hinton's "RMSProp" method presented in his Coursera lecture 6.5.
+    Essentially, it sits right in-between AdaGrad and AdaDelta by being a
+    windowed version of AdaGrad.
+    """
+
+    def __init__(self, model, rho=0.95, eps=1e-5, nllclip=(1e-15, 1-1e-15)):
+        super(MiniRMSProp, self).__init__(model, nllclip)
+
+        # This too needs to accumulate the square gradient of each parameter.
+        self.sh_g2 = [
+            th.shared(np.zeros_like(p.get_value()), broadcastable=p.broadcastable, name='g2_'+p.name)
+            for p in model.params
+        ]
+
+        g = T.grad(cost=model.cost, wrt=model.params)
+
+        updates = []
+        for sh_p, gp, sh_g2 in zip(model.params, g, self.sh_g2):
+            g2 = rho*sh_g2 + (1-rho)*gp*gp
+            updates.append((sh_g2, g2))
+            updates.append((sh_p, sh_p - self.sh_learningrate/T.sqrt(eps+g2) * gp))
             # Instead of adding eps inside the square-root like most
             # implementations do, I just initialize `g2` to eps, that should
             # have the same effect, but cheaper.

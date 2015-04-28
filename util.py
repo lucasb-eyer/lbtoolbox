@@ -5,6 +5,17 @@ import numpy as _np
 import contextlib
 import numbers
 
+
+def tuplize(what):
+    """
+    If `what` is a tuple, return it as-is, otherwise put it into a tuple.
+    """
+    if isinstance(what, tuple):
+        return what
+    else:
+        return (what,)
+
+
 # Thanks http://stackoverflow.com/a/2891805/2366315
 @contextlib.contextmanager
 def printoptions(*args, **kwargs):

@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-from itertools import chain
+from itertools import chain, cycle
 import numbers
 
 
@@ -188,4 +188,47 @@ def plot_cost(train_costs=None, valid_costs=None, cost=None,
         return fig, ax
     else:
         return ax
+
+
+def showcounts(*counters, axis=None, asort=True, tickrot='horizontal', percent=True, labels=None, colors=mpl.rcParams['axes.color_cycle'], legendkw={}):
+    # Need to make the union of all keys in case some counters don't have some key.
+    names = np.array(list(set(chain(*counters))))
+
+    # Sort alphabetically for comparability if necessary.
+    if asort:
+        names = np.sort(names)
+
+    # Make all counts equal, inserting 0 for missing keys.
+    counts = [np.array([c[k] for k in names]) for c in counters]
+
+    Nbars = len(names)      # Number of bars per collection
+    Ncolls = len(counters)  # Number of collections
+    W = 0.8
+    margin = 1-W
+
+    if axis is None:
+        ret = fig, ax = plt.subplots()
+    else:
+        ret = ax = axis
+
+    if percent:
+        counts = [cnts.astype(float) / np.sum(cnts) for cnts in counts]
+        ax.axes.yaxis.set_major_formatter(mpl.ticker.FuncFormatter(lambda x, pos: '{:.0f}'.format(x*100)))
+
+    # Plot all the bars, but collect the return values for later legend.
+    rects = [
+        ax.bar(np.arange(Nbars) + i*W/Ncolls, cnts, W/Ncolls, color=col)
+        for i, (cnts, col) in enumerate(zip(counts, cycle(colors)))
+    ]
+
+    ax.set_xticks(np.arange(Nbars)+W/2)
+    ax.set_xticklabels(names, rotation=tickrot)
+    ax.set_xlim(-margin, Nbars-1+W+margin)
+    ax.set_ylabel("Frequency [%]" if percent else "Occurences")
+
+    if labels is not None:
+        assert len(labels) == len(rects), "Number of labels needs to equal number of collections!"
+        ax.legend((r[0] for r in rects), labels, **legendkw)
+
+    return ret
 

@@ -38,6 +38,15 @@ def imshow(im, ax=None, shape=None, bgr=False, normalize=None, *args, **kwargs):
             plt.colorbar()
         return ret
 
+
+# I'm also tired of manually making the line in the legend twice as fat as regular.
+def fatlegend(ax, *args, **kwargs):
+    leg = ax.legend(*args, **kwargs)
+    for l in leg.legendHandles:
+        l.set_linewidth(l.get_linewidth()*2.0)
+    return leg
+
+
 # TODO: unsure about l, maybe there's a better one!
 cm_lab_l = mpl.cm.gray
 cm_lab_a = mpl.colors.LinearSegmentedColormap.from_list('CIE a*', [(0, 1, 0, 1), (1, 0, 1, 1)])

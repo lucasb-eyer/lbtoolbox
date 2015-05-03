@@ -36,11 +36,13 @@ def imshow(im, ax=None, shape=None, bgr=False, normalize=None, colordim=2, *args
         kwargs.setdefault('vmax',  extr)
 
     if ax is not None:
+        ax.grid(False)
         return ax.imshow(im, *args, **kwargs)
     else:
         ret = plt.imshow(im, *args, **kwargs)
         if len(im.shape) == 2:
             plt.colorbar()
+        plt.grid(False)
         return ret
 
 

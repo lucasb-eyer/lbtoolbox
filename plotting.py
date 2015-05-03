@@ -7,16 +7,21 @@ import matplotlib.pyplot as plt
 from itertools import chain, cycle
 import numbers
 
+from .util import flipany
+
 
 # I'm tired of 'fixing' imshow every time.
-def imshow(im, ax=None, shape=None, bgr=False, normalize=None, *args, **kwargs):
+def imshow(im, ax=None, shape=None, bgr=False, normalize=None, colordim=2, *args, **kwargs):
     kwargs.setdefault('interpolation', 'nearest')
 
     if shape is not None:
         im = im.reshape(shape)
 
     if bgr:
-        im = im[:,:,::-1]
+        im = flipany(im, colordim)
+
+    if colordim != 2:
+        im = np.rollaxis(im, colordim, 3)
 
     if normalize is True:
         im = (255*(im.astype(np.float) - np.min(im))/(np.max(im)-np.min(im))).astype(np.uint8)

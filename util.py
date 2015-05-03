@@ -139,3 +139,12 @@ def printnow(f, fmt, *args, **kwargs):
     if not fmt.endswith('\n'):
         f.write('\n')
     f.flush()
+
+
+def flipany(a, dim):
+    """
+    `flipany(a, 0)` is equivalent to `flipud(a)`,
+    `flipany(a, 1)` is equivalent to `fliplr(a)` and the rest follows naturally.
+    """
+    # Put the axis in front, flip that axis, then move it back.
+    return _np.swapaxes(_np.swapaxes(a, 0, dim)[::-1], 0, dim)

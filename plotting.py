@@ -86,8 +86,8 @@ def subplotgrid_for(what, axis=True, **kwargs):
     except TypeError:
         n = int(what)
 
-    rows = int(np.ceil(np.sqrt(n)))
-    cols = int(np.ceil(float(n)/rows))
+    cols = int(np.ceil(np.sqrt(n)))
+    rows = int(np.ceil(float(n)/cols))
 
     kwargs.setdefault('sharex', True)
     kwargs.setdefault('sharey', True)

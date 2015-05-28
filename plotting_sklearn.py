@@ -5,7 +5,7 @@ import sklearn.preprocessing as _skpp
 import sklearn.metrics as _skm
 
 
-def confuse(conf=None, y_pred=None, y_true=None, labels=None, label_order=None, many=None, figsize=5, showpct=None, hidebelow=1e-5):
+def confuse(conf=None, y_pred=None, y_true=None, labels=None, label_order=None, many=None, figsize=5, showpct=None, hidebelow=1e-5, cm=_plt.cm.Spectral_r):
     """
     Specify either `conf` as a matrix of counts,
     or `y_pred` and `y_true` as arrays of labels.
@@ -20,6 +20,8 @@ def confuse(conf=None, y_pred=None, y_true=None, labels=None, label_order=None, 
 
     If `showpct` is set to `True`, the accuracy of every single cell will be
     shown inside the cell. It defaults to `not many`.
+
+    A different colormap (e.g. for those who like jet =)) can be used via `cm`.
     """
 
     assert conf is not None or (y_pred is not None and y_true is not None), "Need either `conf` or `y_pred` and `y_true`!"
@@ -57,7 +59,7 @@ def confuse(conf=None, y_pred=None, y_true=None, labels=None, label_order=None, 
     # Draw the confusion matrix itself.
     fig, ax = _plt.subplots(figsize=(figsize, figsize))
     ax.set_aspect(1)
-    im = ax.imshow(rconf, cmap=_plt.cm.Spectral_r, interpolation='nearest')
+    im = ax.imshow(rconf, cmap=cm, interpolation='nearest')
     # http://stackoverflow.com/a/26720502/2366315
     fig.colorbar(im, fraction=0.046, pad=0.035)
 

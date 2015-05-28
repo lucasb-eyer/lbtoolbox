@@ -5,13 +5,14 @@ import sklearn.preprocessing as _skpp
 import sklearn.metrics as _skm
 
 
-def confuse(conf=None, y_pred=None, y_true=None, labels=None, many=None, figsize=5, showpct=None, hidebelow=1e-5):
+def confuse(conf=None, y_pred=None, y_true=None, labels=None, label_order=None, many=None, figsize=5, showpct=None, hidebelow=1e-5):
     """
     Specify either `conf` as a matrix of counts,
     or `y_pred` and `y_true` as arrays of labels.
 
     The optional parameter `labels` can either be a collection, an instance
-    of LabelEncoder, or None.
+    of LabelEncoder, or None. If `label_order` is a collection, it defines the
+    order in which labels should appear in the matrix.
 
     If `many` is set to `True`, the confusion matrix will be optimized for
     displaying a large number of classes, i.e. it will contain less details.
@@ -36,6 +37,12 @@ def confuse(conf=None, y_pred=None, y_true=None, labels=None, many=None, figsize
         conf = _skm.confusion_matrix(y_true, y_pred, labels=labels.transform(labels.classes_))
     #print(conf)
 
+    classes = labels.classes_
+    if label_order is not None:
+        classes = label_order
+        new_order = labels.transform(label_order)
+        conf = conf[:,new_order][new_order]
+
     N = len(labels.classes_)
 
     # Potentially "auto-determine" whether we have `many` classes or not.
@@ -58,8 +65,8 @@ def confuse(conf=None, y_pred=None, y_true=None, labels=None, many=None, figsize
     step = 1 if not many else N//(4*figsize)
     ax.set_xticks(range(0, N, step))
     ax.set_yticks(range(0, N, step))
-    ax.set_xticklabels(labels.classes_[::step], rotation='horizontal' if not many else 'vertical')
-    ax.set_yticklabels(labels.classes_[::step])
+    ax.set_xticklabels(classes[::step], rotation='horizontal' if not many else 'vertical')
+    ax.set_yticklabels(classes[::step])
 
     # Fill the boxes with percentage values
     if showpct:

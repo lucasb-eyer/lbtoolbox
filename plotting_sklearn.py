@@ -78,6 +78,9 @@ def confuse(conf=None, y_pred=None, y_true=None, labels=None, label_order=None, 
                     ax.annotate("{:.1%}".format(rconf[x,y]), xy=(y,x), ha='center', va='center')
 
     # Finally, give the average accuracy and the class-mean in the title.
-    ax.set_title("Avg. acc: {:.2%}, class mean: {:.2%}".format(conf.trace()/conf.sum(), rconf.trace()/N))
+    ax.set_title("Avg. acc: {:.2%}, class mean: {:.2%}".format(conf.trace()/conf.sum(), rconf.trace()/N), y=1.03)
+
+    # The grid is problematic because it's going through the middle of the bins.
+    ax.grid(False)
 
     return fig, ax

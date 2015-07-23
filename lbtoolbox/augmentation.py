@@ -6,7 +6,7 @@ import itertools as _it
 # TODO: Implement in terms of skimage?
 import scipy.ndimage.interpolation as _spint
 
-import utils as _u
+import lbtoolbox.util as _u
 
 
 class AugmentationPipeline(object):

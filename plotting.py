@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from itertools import chain, repeat, cycle
 import numbers
 
-from .util import flipany
+from .util import tuplize, flipany
 
 
 # I'm tired of 'fixing' imshow every time.
@@ -120,23 +120,73 @@ def show_coefs(coefs, shape, names=repeat(None)):
     return fig, axes
 
 
+def annotline(ax, line, where, fmt=None, xoffset=0.02, yoffset=0.01, halign='left', valign='bottom', markx=False, linekw={}, textkw={}):
+    # Not sure about that orig=True, for now it never made a difference but it sounds better.
+    x, y = line.get_data(orig=True)
+
+    # `where` may be a function...
+    if callable(where):
+        where = where(y)
+
+    # `where` may now be either just a `y` value, or a pair `x, y`
+    if isinstance(where, numbers.Number):
+        wherey = where
+        wherexs = [x[idx] for idx in np.where(y==wherey)[0]]
+    else:
+        wherey = where[1]
+        wherexs = tuplize(where[0])
+
+    # Get the same color as original line if not set expliclitly:
+    if 'color' not in linekw:
+        linekw = linekw.copy()
+        linekw['color'] = line.get_color()
+        linekw.setdefault('ls', ':')
+
+    ax.axhline(wherey, **linekw)
+
+    # Get same color as axis tick labels if no color set explicitly:
+    if 'color' not in textkw:
+        textkw = textkw.copy()
+        textkw['color'] = ax.yaxis.get_ticklabels()[0].get_color()
+
+    # Get the formatter from the yaxis major ticks if not set explicilty:
+    if fmt is None:
+        # For some reason, this doesn't work as well as I'd like yet.
+        #txt = ax.yaxis.get_major_formatter().format_data(wherey)
+        txt = ax.yaxis.get_major_formatter().format_data_short(wherey)
+    else:
+        txt = fmt.format(wherey)
+
+    x0, x1 = ax.get_xlim()
+    y0, y1 = ax.get_ylim()
+    ax.text(x0 + xoffset*(x1-x0), wherey + yoffset*(y1-y0), txt, horizontalalignment=halign, verticalalignment=valign, **textkw)
+
+    # Potentially add vertical linemarks to mark the x-locations
+    if markx:
+        for x in wherexs:
+            ax.axvline(x, **linekw)
+
+
 def plot_training(train_errs=None, valid_errs=None, mistakes=None,
                   train_epochs=None, valid_epochs=None, test_epochs=None,
-                  ntr=1, nva=1, nte=1, axis=None):
+                  ntr=1, nva=1, nte=1, axis=None,
+                  besttr=False, bestva=False, bestte=False):
     if axis is None:
-        fig, ax = plt.subplots()
+        ret = fig, ax = plt.subplots()
     else:
-        ax = axis
+        ret = ax = axis
 
-    if train_errs is not None:
+    trline = None
+    if train_errs is not None and len(train_errs) > 1:
         if train_epochs is None:
             train_epochs = np.arange(len(train_errs))
-        ax.plot(train_epochs, np.array(train_errs)/ntr, color='#fb8072', label='Training error')
+        trline, = ax.plot(train_epochs, np.array(train_errs)/ntr, color='#fb8072', label='Training error')
 
-    if valid_epochs is not None:
+    valine = None
+    if valid_epochs is not None and len(valid_epochs) > 1:
         if valid_epochs is None:
             valid_epochs = np.arange(len(valid_errs))
-        ax.plot(valid_epochs, np.array(valid_errs)/nva, color='#8dd3c7', label='Validation error')
+        valine, = ax.plot(valid_epochs, np.array(valid_errs)/nva, color='#8dd3c7', label='Validation error')
 
     ax.grid(True)
     ax.set_xlabel('Epochs')
@@ -145,56 +195,73 @@ def plot_training(train_errs=None, valid_errs=None, mistakes=None,
         ax.set_ylabel(ax.get_ylabel() + ' [%]')
         ax.axes.yaxis.set_major_formatter(mpl.ticker.FuncFormatter(lambda x, pos: '{:.1f}'.format(x*100)))
 
+    teline = None
     if isinstance(mistakes, numbers.Number):
         ax.axhline(mistakes/nte, color='#3b8cc2', linewidth=1, linestyle='--', label='Testing error')
-    elif mistakes is not None:
+    elif mistakes is not None and len(mistakes) > 1:
         if test_epochs is None and mistakes is not None:
             test_epochs = np.arange(len(mistakes))
-        ax.plot(test_epochs, np.array(mistakes)/nte, color='#3b8cc2', linewidth=1, linestyle='--', label='Testing error')
+        teline, = ax.plot(test_epochs, np.array(mistakes)/nte, color='#3b8cc2', linewidth=1, linestyle='--', label='Testing error')
 
-    ax.legend()
+    # Potentially add lines pinpointing the best points.
+    if besttr and trline is not None:
+        annotline(ax, trline, np.min, fmt='{:.2%}', markx=True)
+    if bestva and valine is not None:
+        annotline(ax, valine, np.min, fmt='{:.2%}', markx=True)
+    if bestte and teline is not None:
+        annotline(ax, teline, np.min, fmt='{:.2%}', markx=True)
 
-    if axis is None:
-        return fig, ax
-    else:
-        return ax
+    if None not in (trline, valine, teline):
+        fatlegend(ax)
+
+    return ret
+
 
 def plot_cost(train_costs=None, valid_costs=None, cost=None,
               train_epochs=None, valid_epochs=None, test_epochs=None,
-              axis=None):
+              besttr=False, bestva=False, bestte=False,
+              axis=None, name='Cost'):
     if axis is None:
-        fig, ax = plt.subplots()
+        ret = fig, ax = plt.subplots()
     else:
-        ax = axis
+        ret = ax = axis
 
-    if train_costs is not None:
+    trline = None
+    if train_costs is not None and len(train_costs) > 1:
         if train_epochs is None:
             train_epochs = np.arange(len(train_costs))
-        ax.plot(train_epochs, np.array(train_costs), color='#fb8072', label='Training cost')
+        trline, = ax.plot(train_epochs, np.array(train_costs), color='#fb8072', label='Training cost')
 
-    if valid_costs is not None:
+    valine = None
+    if valid_costs is not None and len(valid_costs) > 1:
         if valid_epochs is None:
             valid_epochs = np.arange(len(valid_costs))
-        ax.plot(valid_epochs, np.array(valid_costs), color='#8dd3c7', label='Validation cost')
+        valine, = ax.plot(valid_epochs, np.array(valid_costs), color='#8dd3c7', label='Validation cost')
 
     ax.grid(True)
     ax.set_xlabel('Epochs')
-    ax.set_ylabel('Cost')
+    ax.set_ylabel(name)
 
+    teline = None
     if isinstance(cost, numbers.Number):
         ax.axhline(cost, color='#3b8cc2', linewidth=1, linestyle='--', label='Actual Cost')
-    elif cost is not None:
+    elif cost is not None and len(cost) > 1:
         if test_epochs is None and mistakes is not None:
             test_epochs = np.arange(len(cost))
-        ax.plot(test_epochs, np.array(cost), color='#3b8cc2', linewidth=1, linestyle='--', label='Actual Cost')
+        teline, = ax.plot(test_epochs, np.array(cost), color='#3b8cc2', linewidth=1, linestyle='--', label='Actual Cost')
 
-    ax.legend()
+    # Potentially add lines pinpointing the best points.
+    if besttr and trline is not None:
+        annotline(ax, trline, np.min, markx=True)
+    if bestva and valine is not None:
+        annotline(ax, valine, np.min, markx=True)
+    if bestte and teline is not None:
+        annotline(ax, teline, np.min, markx=True)
 
+    if None not in (trline, valine, teline):
+        fatlegend(ax)
 
-    if axis is None:
-        return fig, ax
-    else:
-        return ax
+    return ret
 
 
 def showcounts(*counters, axis=None, asort=True, tickrot='horizontal', percent=True, labels=None, colors=mpl.rcParams['axes.color_cycle'], legendkw={}):

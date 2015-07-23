@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-from itertools import chain, cycle
+from itertools import chain, repeat, cycle
 import numbers
 
 from .util import flipany
@@ -107,11 +107,11 @@ def subplotgrid_for(what, axis=True, **kwargs):
     return fig, axes
 
 
-def show_coefs(coefs, shape, names=None):
+def show_coefs(coefs, shape, names=repeat(None)):
     fig, axes = subplotgrid_for(coefs, axis=False)
     fig.suptitle('Learned coefficients of the classes', fontsize=16)
 
-    for coef, ax, name in zip(coefs, axes.flat, names or [None]*len(coefs)):
+    for coef, ax, name in zip(coefs, axes.flat, names):
         if name is not None:
             ax.set_title(name)
         im = imshow(coef, ax, shape=shape)

@@ -1,0 +1,6 @@
+# Byte-compiled python code in all versions.
+__pycache__/
+*.py[cod]
+
+# Setup/Development/Distribution.
+*.egg-info/

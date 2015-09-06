@@ -24,7 +24,8 @@ def check_gpu():
 
 
 def save_model(model, fname, compress=False, hashmodel=True):
-    kwargs = {"{}-{}".format(i, p.name): p.get_value() for i, p in enumerate(model.params)}
+    params, _ = model.parameters()
+    kwargs = {"{}-{}".format(i, p.name): p.get_value() for i, p in enumerate(params)}
     if hashmodel:
         fname += '-{}'.format(crc32('\n'.join(sorted(kwargs.keys())).encode('utf-8')))
     if compress:
@@ -34,17 +35,20 @@ def save_model(model, fname, compress=False, hashmodel=True):
 
 
 def load_model(model, fname, hashmodel=True):
+    params, _ = model.parameters()
+
     if hashmodel:
-        pnames = ["{}-{}".format(i, p.name) for i, p in enumerate(model.params)]
+        pnames = ["{}-{}".format(i, p.name) for i, p in enumerate(params)]
         fname += '-{}'.format(crc32('\n'.join(sorted(pnames)).encode('utf-8')))
 
     if not fname.endswith(".npz"):
         fname = fname + ".npz"
 
     with np.load(fname) as ps:
-        for i, p in enumerate(model.params):
+        for i, p in enumerate(params):
             p.set_value(ps["{}-{}".format(i, p.name)])
 
 
 def count_params(model):
-    return sum(np.prod(p.get_value().shape) for p in model.params)
+    params, _ = model.parameters()
+    return sum(np.prod(p.get_value().shape) for p in params)

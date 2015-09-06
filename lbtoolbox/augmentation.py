@@ -94,7 +94,7 @@ class AugmentationPipeline(object):
             out[i] = img
             for ot, t in zip(outtgts, tgts):
                 ot[i] = t
-        return out, outtgts
+        return (out,) + outtgts
 
 
     def augbatch_pred(self, batch, fast=False):

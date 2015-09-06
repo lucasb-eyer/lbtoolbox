@@ -10,6 +10,18 @@ import numbers
 from .util import tuplize, flipany
 
 
+try:
+    from IPython.display import display, clear_output
+
+    def liveplot(plotfn, *a, **kw):
+        clear_output(True)
+        display(plotfn(*a, **kw))
+        plt.close()
+
+except ImportError:
+    pass
+
+
 # I'm tired of 'fixing' imshow every time.
 def imshow(im, ax=None, shape=None, bgr=False, normalize=None, colordim=2, *args, **kwargs):
     kwargs.setdefault('interpolation', 'nearest')

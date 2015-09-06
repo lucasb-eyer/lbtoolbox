@@ -6,14 +6,39 @@ import contextlib
 import numbers
 
 
-def tuplize(what):
+def tuplize(what, lists=True, tuplize_none=False):
     """
     If `what` is a tuple, return it as-is, otherwise put it into a tuple.
+    If `lists` is true, also consider lists to be tuples (the default).
+    If `tuplize_none` is true, a lone `None` results in an empty tuple,
+    otherwise it will be returned as `None` (the default).
     """
-    if isinstance(what, tuple):
-        return what
+    if what is None:
+        if tuplize_none:
+            return tuple()
+        else:
+            return None
+
+    if isinstance(what, tuple) or (lists and isinstance(what, list)):
+        return tuple(what)
     else:
         return (what,)
+
+
+def maybetuple(what):
+    """
+    Transforms `what` into a tuple, except if it's of length one, then it's
+    returned as-is, or if it's of length zero, then `None` is returned.
+    """
+    t = tuple(what)
+    return t if len(t) > 1 else t[0] if len(t) == 1 else None
+
+
+def collect(what, drop_nones=True):
+    """
+    Returns a tuple that is the concatenation of all tuplized things in `what`.
+    """
+    return sum((tuplize(w, tuplize_none=drop_nones) for w in what), tuple())
 
 
 # Thanks http://stackoverflow.com/a/2891805/2366315

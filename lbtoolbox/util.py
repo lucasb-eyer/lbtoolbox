@@ -71,6 +71,39 @@ def printshort(fmt='{: 0.3f}'):
     _np.set_printoptions(**original)
 
 
+def batched(batchsize, *arrays, shuf=False, droplast=False):
+    """
+    A generator function which goes through all of `arrays` together,
+    but in batches of size `batchsize` along the first dimension.
+
+    batched_padded(3, np.arange(10), np.arange(10))
+
+    will yield sub-arrays of the given ones four times, the fourth one only
+    containing a single value.
+    """
+
+    assert(len(arrays) > 0)
+
+    n = arrays[0].shape[0]
+
+    # Assumption: all arrays have the same 1st dimension as the first one.
+    assert(all(x.shape[0] == n for x in arrays))
+
+    indices = _np.arange(n)
+    if shuf is not False:
+        rng = check_random_state(shuf)
+        rng.shuffle(indices)
+
+    # First, go through all full batches.
+    for i in range(n // batchsize):
+        yield maybetuple(x[indices[i*batchsize:(i+1)*batchsize]] for x in arrays)
+
+    # And now maybe return the last batch.
+    rest = n % batchsize
+    if rest != 0 and not droplast:
+        yield maybetuple(x[indices[-rest:]] for x in arrays)
+
+
 # Pads the first dimension of `x` to length `l`
 def _pad_first_dim_to(x, l):
     pads = ((0, l - x.shape[0]),) + tuple((0,0) for _ in range(len(x.shape)-1))

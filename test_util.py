@@ -41,6 +41,144 @@ class TestUtilFunctions(unittest.TestCase):
         self.assertEqual(u.collect([None, (0,1), 2, None]), (0,1,2))
 
 
+    def test_batched_1d(self):
+        # 1D array with fitting size
+        l = list(u.batched(3, np.arange(6)))
+        self.assertEqual(len(l), 2)
+        npt.assert_array_equal(l[0], [0,1,2])
+        npt.assert_array_equal(l[1], [3,4,5])
+
+        # 1D arrays with fitting size
+        l = list(u.batched(3, np.arange(6), np.arange(6)))
+        self.assertEqual(len(l), 2)
+        npt.assert_array_equal(l[0][0], [0,1,2])
+        npt.assert_array_equal(l[0][1], [0,1,2])
+        npt.assert_array_equal(l[1][0], [3,4,5])
+        npt.assert_array_equal(l[1][1], [3,4,5])
+
+        # 1D array with leftover
+        l = list(u.batched(3, np.arange(7)))
+        self.assertEqual(len(l), 3)
+        npt.assert_array_equal(l[0], [0,1,2])
+        npt.assert_array_equal(l[1], [3,4,5])
+        npt.assert_array_equal(l[2], [6])
+
+        # 1D arrays with leftover
+        l = list(u.batched(3, np.arange(7), np.arange(7)))
+        self.assertEqual(len(l), 3)
+        npt.assert_array_equal(l[0][0], [0,1,2])
+        npt.assert_array_equal(l[0][1], [0,1,2])
+        npt.assert_array_equal(l[1][0], [3,4,5])
+        npt.assert_array_equal(l[1][1], [3,4,5])
+        npt.assert_array_equal(l[2][0], [6])
+        npt.assert_array_equal(l[2][1], [6])
+
+
+    def test_batched_2d(self):
+        # 2D array with fitting size
+        l = list(u.batched(3, np.array([[2*i, 2*i+1] for i in range(6)])))
+        self.assertEqual(len(l), 2)
+        npt.assert_array_equal(l[0], [[0,1],[2,3],[4,5]])
+        npt.assert_array_equal(l[1], [[6,7],[8,9],[10,11]])
+
+        # 2D arrays with fitting size
+        l = list(u.batched(3, np.array([[2*i, 2*i+1] for i in range(6)]), np.arange(6)))
+        self.assertEqual(len(l), 2)
+        npt.assert_array_equal(l[0][0], [[0,1],[2,3],[4,5]])
+        npt.assert_array_equal(l[0][1], [0, 1, 2])
+        npt.assert_array_equal(l[1][0], [[6,7],[8,9],[10,11]])
+        npt.assert_array_equal(l[1][1], [3, 4, 5])
+
+        # 2D array with leftover
+        l = list(u.batched(3, np.array([[2*i, 2*i+1] for i in range(7)])))
+        self.assertEqual(len(l), 3)
+        npt.assert_array_equal(l[0], [[0,1],[2,3],[4,5]])
+        npt.assert_array_equal(l[1], [[6,7],[8,9],[10,11]])
+        npt.assert_array_equal(l[2], [[12,13]])
+
+
+        # 2D arrays with leftover
+        l = list(u.batched(3, np.array([[2*i, 2*i+1] for i in range(7)]), np.arange(7)))
+        self.assertEqual(len(l), 3)
+        npt.assert_array_equal(l[0][0], [[0,1],[2,3],[4,5]])
+        npt.assert_array_equal(l[0][1], [0, 1, 2])
+        npt.assert_array_equal(l[1][0], [[6,7],[8,9],[10,11]])
+        npt.assert_array_equal(l[1][1], [3, 4, 5])
+        npt.assert_array_equal(l[2][0], [[12,13]])
+        npt.assert_array_equal(l[2][1], [6])
+
+
+    def test_batched_shuf_1d(self):
+        # 1D array with fitting size
+        l = list(u.batched(3, np.arange(6), shuf=True))
+        self.assertEqual(len(l), 2)
+        npt.assert_array_equal(sorted(np.concatenate(l)), np.arange(6))
+
+        # 1D arrays with fitting size
+        l = list(u.batched(3, np.arange(6), np.arange(6), shuf=True))
+        self.assertEqual(len(l), 2)
+        npt.assert_array_equal(l[0][0], l[0][1])
+        npt.assert_array_equal(l[1][0], l[1][1])
+        npt.assert_array_equal(sorted(np.concatenate(list(zip(*l))[0])), np.arange(6))
+        npt.assert_array_equal(sorted(np.concatenate(list(zip(*l))[1])), np.arange(6))
+
+        # 1D array with leftover
+        l = list(u.batched(3, np.arange(7), shuf=True))
+        self.assertEqual(len(l), 3)
+        self.assertEqual(len(l[-1]), 1)
+        npt.assert_array_equal(sorted(np.concatenate(l)), np.arange(7))
+
+        # 1D arrays with leftover
+        l = list(u.batched(3, np.arange(7), np.arange(7)))
+        self.assertEqual(len(l), 3)
+        self.assertEqual(len(l[-1][0]), 1)
+        self.assertEqual(len(l[-1][1]), 1)
+        npt.assert_array_equal(l[0][0], l[0][1])
+        npt.assert_array_equal(l[1][0], l[1][1])
+        npt.assert_array_equal(l[2][0], l[2][1])
+        npt.assert_array_equal(sorted(np.concatenate(list(zip(*l))[0])), np.arange(7))
+        npt.assert_array_equal(sorted(np.concatenate(list(zip(*l))[1])), np.arange(7))
+
+
+    def test_batched_shuf_2d(self):
+        # Here we mostly test for the length of the batches and whether they
+        # still got the same content, NOT their shapes.
+        # Testing their shapes has been done in `test_Batched_2d` and this
+        # should only test the shuffling.
+        a6 = np.array([[2*i, 2*i+1] for i in range(6)])
+        a7 = np.array([[2*i, 2*i+1] for i in range(7)])
+
+        # 2D array with fitting size
+        l = list(u.batched(3, a6, shuf=True))
+        self.assertEqual(len(l), 2)
+        npt.assert_array_equal(sorted(np.concatenate([i.flatten() for i in l])), a6.flatten())
+
+        # 2D arrays with fitting size
+        l = list(u.batched(3, a6, a6, shuf=True))
+        self.assertEqual(len(l), 2)
+        npt.assert_array_equal(l[0][0], l[0][1])
+        npt.assert_array_equal(l[1][0], l[1][1])
+        l1, l2 = zip(*l)
+        npt.assert_array_equal(sorted(np.concatenate([i.flatten() for i in l1])), a6.flatten())
+        npt.assert_array_equal(sorted(np.concatenate([i.flatten() for i in l2])), a6.flatten())
+
+        # 2D array with leftover
+        l = list(u.batched(3, a7, shuf=True))
+        self.assertEqual(len(l), 3)
+        self.assertEqual(l[-1].shape, (1,2))
+        npt.assert_array_equal(sorted(np.concatenate([i.flatten() for i in l])), a7.flatten())
+
+        # 2D arrays with leftover
+        l = list(u.batched(3, a7, a7))
+        self.assertEqual(len(l), 3)
+        npt.assert_array_equal(l[0][0], l[0][1])
+        npt.assert_array_equal(l[1][0], l[1][1])
+        npt.assert_array_equal(l[2][0], l[2][1])
+        l1, l2 = zip(*l)
+        npt.assert_array_equal(sorted(np.concatenate([i.flatten() for i in l1])), a7.flatten())
+        npt.assert_array_equal(sorted(np.concatenate([i.flatten() for i in l2])), a7.flatten())
+
+
     def test_batched_padded(self):
         # 1D array with fitting size
         l = list(u.batched_padded(3, np.arange(9)))

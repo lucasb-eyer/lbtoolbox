@@ -440,3 +440,21 @@ class Zoomer(Augmenter):
 
         out[dst_y0:dst_y1,dst_x0:dst_x1] = zimg[src_y0:src_y1,src_x0:src_x1]
         return out
+
+
+class ColorPCA(Augmenter):
+    def __init__(self, std=0.1):
+        self.std = std
+
+    def fit(self, Xtr, ytr):
+        # From (MiniBatch, Channel, ...) to (Channel, MiniBatch, ...)
+        Xtr = _np.rollaxis(Xtr, 1)
+        # To (Channel, MiniBatch*H*W)
+        Xtr = Xtr.reshape((Xtr.shape[0], -1))
+        self.l, self.V = _np.linalg.eig(_np.cov(Xtr))
+
+    def transform_train(self, img, *targets):
+        alpha = _np.random.randn(3)*self.std
+        noise = _np.dot(self.V, alpha * self.l)
+        # TODO: Find a better way to broadcast this addition!
+        return img + noise[:,_np.newaxis,_np.newaxis], targets

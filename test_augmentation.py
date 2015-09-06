@@ -25,7 +25,7 @@ class TestCropper(unittest.TestCase):
             for i in range(100):
                 s0 = np.random.randint(scrop[0]+1, scrop[0]+100)
                 s1 = np.random.randint(scrop[1]+1, scrop[1]+100)
-                self.assertEqual(c.transform_train(np.random.rand(s0, s1)).shape, scrop)
+                self.assertEqual(c.transform_train(np.random.rand(s0, s1))[0].shape, scrop)
 
             # Testing crops
             s0 = np.random.randint(scrop[0]+1, scrop[0]+100)

@@ -40,7 +40,7 @@ def imshow(im, ax=None, shape=None, bgr=False, normalize=None, colordim=2, *args
     elif normalize is not None and len(normalize) == 2:
         im = (255*(im.astype(np.float) - normalize[0])/(normalize[1]-normalize[0])).astype(np.uint8)
 
-    # Spectral colormap only if it's not a color image
+    # Spectral colormap only if it's not a color image and no map is given.
     if len(im.shape) == 2:
         kwargs.setdefault('cmap', mpl.cm.Spectral_r)
         extr = np.max(np.abs(im))

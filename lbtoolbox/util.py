@@ -4,6 +4,7 @@ import numpy as _np
 
 import contextlib
 import numbers
+import sys
 
 
 def tuplize(what, lists=True, tuplize_none=False):
@@ -183,7 +184,7 @@ def check_random_state(seed):
     raise ValueError('{!r} cannot be used to seed a numpy.random.RandomState instance'.format(seed))
 
 
-def printnow(f, fmt, *args, **kwargs):
+def writenow(f, fmt, *args, **kwargs):
     """
     Formats the string `fmt` with the given `args` and `kwargs`, then writes it
     (including a final newline) to `f` and flushes f.
@@ -197,6 +198,14 @@ def printnow(f, fmt, *args, **kwargs):
     if not fmt.endswith('\n'):
         f.write('\n')
     f.flush()
+
+
+def printnow(fmt, *args, **kwargs):
+    """
+    Formats the string `fmt` with the given `args` and `kwargs`, then prints
+    and flushes it to stdout.
+    """
+    return writenow(sys.stdout, fmt, *args, **kwargs)
 
 
 def flipany(a, dim):

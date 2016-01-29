@@ -72,7 +72,7 @@ def printshort(fmt='{: 0.3f}'):
     _np.set_printoptions(**original)
 
 
-def batched(batchsize, *arrays, shuf=False, droplast=False):
+def batched(batchsize, *arrays, **kw):
     """
     A generator function which goes through all of `arrays` together,
     but in batches of size `batchsize` along the first dimension.
@@ -81,7 +81,19 @@ def batched(batchsize, *arrays, shuf=False, droplast=False):
 
     will yield sub-arrays of the given ones four times, the fourth one only
     containing a single value.
+
+    Valid keyword arguments:
+
+    - `shuf`: Shuffle the whole dataset before going through it.
+    - `shuf_batches`: Batch the data and go through the batches in random order.
+       This is useful e.g. if the data is sorted by length, to have batches only
+       contain data of the same length, but go through lenghts randomly.
+    - `droplast`: Do not return the last batch if it's smaller than `batchsize`.
     """
+
+    shuf = kw.get('shuf', False)
+    shuf_batches = kw.get('shuf_batches', False)
+    droplast = kw.get('droplast', False)
 
     assert(len(arrays) > 0)
 

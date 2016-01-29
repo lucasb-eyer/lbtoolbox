@@ -23,6 +23,24 @@ progress.py
 
 IPython interactive progressbar. TODO: update to new interactive widget.
 
+chrono.py
+=========
+
+Utility to very simply time things, including parts of loops. Use as follows:
+
+```
+c = Chrono()
+
+for e in range(10):
+    with c.measure("transmogrifying"):
+        tm = transmogrify(e)
+    with c.measure("plotting"):
+        plot(tm)
+
+print(c)
+print(c.avgtime("plotting"))
+```
+
 nnet*
 =====
 

@@ -169,9 +169,11 @@ def annotline(ax, line, where, fmt=None, xoffset=0.02, yoffset=0.01, halign='lef
     else:
         txt = fmt.format(wherey)
 
-    x0, x1 = ax.get_xlim()
-    y0, y1 = ax.get_ylim()
-    ax.text(x0 + xoffset*(x1-x0), wherey + yoffset*(y1-y0), txt, horizontalalignment=halign, verticalalignment=valign, **textkw)
+    ax.annotate(txt,
+        xy=(x[0], wherey), xycoords='data',
+        xytext=(5, 5), textcoords='offset points',  # Potential alternative: 'axes fraction'
+        ha=halign, va=valign,
+    )
 
     # Potentially add vertical linemarks to mark the x-locations
     if markx:

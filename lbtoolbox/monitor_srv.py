@@ -74,7 +74,7 @@ class CollectorThread(Collector, Thread):
             self.tick()
 
 
-class QueryHandler(Thread):
+class QueryHandler(object):
     def __init__(self, store, *addrs):
         self.store = store
 
@@ -118,7 +118,7 @@ if __name__ == "__main__":
     c.start()
 
     default_addrs = ["tcp://127.0.0.1:31337", "ipc:///tmp/lbmon-repo.ipc"]
-    r = QueryHandler(store, *(sys.argv[1:] or default_addrs))
+    r = QueryHandlerThread(store, *(sys.argv[1:] or default_addrs))
     r.start()
 
     try:

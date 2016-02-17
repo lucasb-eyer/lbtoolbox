@@ -132,7 +132,7 @@ def show_coefs(coefs, shape, names=repeat(None)):
     return fig, axes
 
 
-def annotline(ax, line, where, fmt=None, xoffset=0.02, yoffset=0.01, halign='left', valign='bottom', markx=False, linekw={}, textkw={}):
+def annotline(ax, line, where, fmt=None, xytext=(5,5), halign='left', valign='bottom', markx=False, linekw={}, textkw={}):
     # Not sure about that orig=True, for now it never made a difference but it sounds better.
     x, y = line.get_data(orig=True)
 
@@ -171,7 +171,7 @@ def annotline(ax, line, where, fmt=None, xoffset=0.02, yoffset=0.01, halign='lef
 
     ax.annotate(txt,
         xy=(x[0], wherey), xycoords='data',
-        xytext=(5, 5), textcoords='offset points',  # Potential alternative: 'axes fraction'
+        xytext=xytext, textcoords='offset points',  # Potential alternative: 'axes fraction'
         ha=halign, va=valign,
     )
 

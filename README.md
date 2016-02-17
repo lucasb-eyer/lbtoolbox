@@ -88,3 +88,8 @@ thutil.py
 =========
 
 Minor utilities for working with Theano. Currently checks for GPU.
+
+monitor.py
+==========
+
+Install `nanomsg`, then `pip install nnpy` (needs `libffi-dev`).

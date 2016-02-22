@@ -276,6 +276,7 @@ try:
 
             self.sock.setsockopt(nnpy.SOL_SOCKET, nnpy.RCVTIMEO, timeoutms)
             self.sock.setsockopt(nnpy.SOL_SOCKET, nnpy.SNDTIMEO, timeoutms)
+            self.sock.setsockopt(nnpy.SOL_SOCKET, nnpy.RCVMAXSIZE, -1)
 
         def update(self):
             # Ask for losses of currently last known epoch and following if any.

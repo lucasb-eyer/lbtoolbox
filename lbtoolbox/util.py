@@ -4,6 +4,7 @@ import numpy as _np
 
 import contextlib
 import numbers
+import signal
 import sys
 
 
@@ -242,3 +243,37 @@ def flipany(a, dim):
     """
     # Put the axis in front, flip that axis, then move it back.
     return _np.swapaxes(_np.swapaxes(a, 0, dim)[::-1], 0, dim)
+
+
+# Based on https://gist.github.com/nonZero/2907502
+class Uninterrupt(object):
+    """
+    Use as:
+
+    with Uninterrupt() as u:
+        while not u.interrupted:
+            # train
+    """
+    def __init__(self, sig=signal.SIGINT):
+        self.sig = sig
+
+    def __enter__(self):
+        self.interrupted = False
+        self.released = False
+
+        self.orig_handler = signal.getsignal(self.sig)
+
+        def handler(signum, frame):
+            self.release()
+            self.interrupted = True
+
+        signal.signal(self.sig, handler)
+        return self
+
+    def __exit__(self, type_, value, tb):
+        self.release()
+
+    def release(self):
+        if not self.released:
+            signal.signal(self.sig, self.orig_handler)
+            self.released = True

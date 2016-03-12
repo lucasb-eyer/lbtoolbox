@@ -215,7 +215,7 @@ def check_random_state(seed):
 def writenow(f, fmt, *args, **kwargs):
     """
     Formats the string `fmt` with the given `args` and `kwargs`, then writes it
-    (including a final newline) to `f` and flushes f.
+    to `f` and flushes f.
 
     If `f` is `None`, nothing is done.
     """
@@ -223,8 +223,6 @@ def writenow(f, fmt, *args, **kwargs):
         return
 
     f.write(fmt.format(*args, **kwargs))
-    if not fmt.endswith('\n'):
-        f.write('\n')
     f.flush()
 
 

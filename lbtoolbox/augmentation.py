@@ -459,3 +459,24 @@ class ColorPCA(Augmenter):
         noise = _np.dot(self.V, alpha * self.l)
         # TODO: Find a better way to broadcast this addition!
         return img + noise[:,_np.newaxis,_np.newaxis], targets
+
+
+class Gamma(Augmenter):
+    """
+    Augment images by randomly adjusting the gamma value.
+    """
+    def __init__(self, range=(0.25, 4.0)):
+        self.logrange = _np.log(range)
+
+    def npreds(self, fast):
+        return 1 if fast else 3
+
+    def transform_train(self, img, *targets):
+        g = _np.exp(_u.truncrandn_approx(*self.logrange))
+        return img**g, targets
+
+    def transform_pred(self, img, i, fast=False):
+        if fast or i == 0:
+            return img
+        else:
+            return img**_np.exp(self.logrange[i-1])

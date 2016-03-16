@@ -275,3 +275,25 @@ class Uninterrupt(object):
         if not self.released:
             signal.signal(self.sig, self.orig_handler)
             self.released = True
+
+
+def truncrandn_approx(lo, hi, *dims):
+    """
+    Sample values as specified by `dims` from normal distribution truncated to `[lo, hi]`.
+    The result is very similar to re-sampling values that fall outside the range,
+    but in bounded time, and faster.
+    """
+    std = (hi-lo)/2.0/3.0  # This std will result in 99.7% of samples
+    mean = (lo + hi)/2.0
+    r = std*_np.random.randn(*dims)+mean
+
+    if len(dims) == 0:
+        if lo <= r <= hi:
+            return r
+        else:
+            # TODO: Might also do some module-stuff to avoid re-sampling!
+            return _np.random.uniform(lo, hi)
+    else:
+        outside = (r < lo) | (hi < r)
+        r[outside] = _np.random.uniform(lo, hi, sum(outside))
+        return r

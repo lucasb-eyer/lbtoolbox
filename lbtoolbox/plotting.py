@@ -320,3 +320,45 @@ def showcounts(*counters, axis=None, asort=True, tickrot='horizontal', percent=T
 
     return ret
 
+
+# http://stackoverflow.com/a/16836182
+def make_colormap(seq):
+    """Return a LinearSegmentedColormap
+    seq: a sequence of floats and RGB-tuples. The floats should be increasing
+    and in the interval (0,1).
+    """
+    seq = [(None,) * 3, 0.0] + list(seq) + [1.0, (None,) * 3]
+    cdict = {'red': [], 'green': [], 'blue': []}
+    for i, item in enumerate(seq):
+        if isinstance(item, float):
+            r1, g1, b1 = seq[i - 1]
+            r2, g2, b2 = seq[i + 1]
+            cdict['red'].append([item, r1, r2])
+            cdict['green'].append([item, g1, g2])
+            cdict['blue'].append([item, b1, b2])
+    return mpl.colors.LinearSegmentedColormap('CustomMap', cdict)
+
+
+# http://stackoverflow.com/a/30689259
+def diverge_map(low=(0.094, 0.310, 0.635), high=(0.565, 0.392, 0.173)):
+    '''
+    low and high are colors that will be used for the two
+    ends of the spectrum. they can be either color strings
+    or rgb color tuples
+    '''
+    c = mpl.colors.ColorConverter().to_rgb
+    if isinstance(low, basestring): low = c(low)
+    if isinstance(high, basestring): high = c(high)
+    return make_colormap([low, c('white'), 0.5, c('white'), high])
+
+
+def linear_map(low=(0.094, 0.310, 0.635), high=(0.565, 0.392, 0.173)):
+    '''
+    low and high are colors that will be used for the two
+    ends of the spectrum. they can be either color strings
+    or rgb color tuples
+    '''
+    c = mpl.colors.ColorConverter().to_rgb
+    if isinstance(low, (str, bytes)): low = c(low)
+    if isinstance(high, (str, bytes)): high = c(high)
+    return make_colormap([low, high])

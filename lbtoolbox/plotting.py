@@ -8,6 +8,7 @@ from os.path import join as pjoin
 from datetime import datetime
 from itertools import chain, repeat, cycle
 import numbers
+import warnings
 
 from .util import tuplize, flipany
 
@@ -30,6 +31,29 @@ except ImportError:
     pass
 
 
+def imshow_raw(im, ax=None, shape=None, bgr=False, colordim=2, *args, **kwargs):
+    kwargs.setdefault('interpolation', 'nearest')
+    kwargs.setdefault('cmap', mpl.cm.Spectral_r)
+
+    if shape is not None:
+        im = im.reshape(shape)
+
+    if bgr:
+        im = flipany(im, colordim)
+
+    if colordim != 2:
+        im = np.rollaxis(im, colordim, 3)
+
+    if ax is not None:
+        ax.grid(False)
+        return ax.imshow(im, *args, **kwargs)
+    else:
+        figsize = kwargs.pop('figsize', None)
+        plt.figure(figsize=figsize)
+        plt.grid(False)
+        return plt.imshow(im, *args, **kwargs)
+
+
 # I'm tired of 'fixing' imshow every time.
 def imshow(im, ax=None, shape=None, bgr=False, normalize=None, colordim=2, *args, **kwargs):
     kwargs.setdefault('interpolation', 'nearest')
@@ -43,22 +67,34 @@ def imshow(im, ax=None, shape=None, bgr=False, normalize=None, colordim=2, *args
     if colordim != 2:
         im = np.rollaxis(im, colordim, 3)
 
-    if normalize is True:
-        im = (255*(im.astype(np.float) - np.min(im))/(np.max(im)-np.min(im))).astype(np.uint8)
-    elif normalize is not None and len(normalize) == 2:
-        im = (255*(im.astype(np.float) - normalize[0])/(normalize[1]-normalize[0])).astype(np.uint8)
+    # If `normalize` is a tuple, we get the image into that range first.
+    if normalize is not None and len(normalize) == 2:
+        im = (im.astype(np.float) - normalize[0])/(normalize[1] - normalize[0])
 
-    # Spectral colormap only if it's not a color image and no map is given.
+    kwargs.setdefault('cmap', mpl.cm.Spectral_r)
+
+    # In the case of a "heatmap," we make it symmetric around 0.
     if len(im.shape) == 2:
-        kwargs.setdefault('cmap', mpl.cm.Spectral_r)
         extr = np.max(np.abs(im))
         kwargs.setdefault('vmin', -extr)
         kwargs.setdefault('vmax',  extr)
+    # But in the case of RGB images, we need to get them into "regular" range [0-255].
+    elif len(im.shape) == 3 and im.shape[2] == 3 and im.dtype != np.uint8:
+        if 0 <= np.min(im) and 10 < np.max(im):
+            warnings.warn("Image looks like [0-255] RGB but dtype isn't `uint8`. Renormalizing.")
+        if normalize is not None and len(normalize) == 2:
+            im = (255*im).astype(np.uint8)
+        else:
+            im = (255*(im.astype(np.float) - np.min(im))/(np.max(im)-np.min(im))).astype(np.uint8)
 
     if ax is not None:
         ax.grid(False)
         return ax.imshow(im, *args, **kwargs)
     else:
+        figsize = kwargs.pop('figsize', None)
+        if figsize is not None:
+            plt.figure(figsize=figsize)
+
         ret = plt.imshow(im, *args, **kwargs)
         if len(im.shape) == 2:
             plt.colorbar()

@@ -4,6 +4,8 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
+from os.path import join as pjoin
+from datetime import datetime
 from itertools import chain, repeat, cycle
 import numbers
 
@@ -13,9 +15,15 @@ from .util import tuplize, flipany
 try:
     from IPython.display import display, clear_output
 
-    def liveplot(plotfn, *a, **kw):
+    def liveplot(plotfn, *a, savedir=None, savename=None, **kw):
+        fig = plotfn(*a, **kw)
+        if fig is None:
+            return
+        if savedir is not None:
+            savename = savename or datetime.now().isoformat()
+            savefig(fig, pjoin(savedir, savename), pdf=False)
         clear_output(True)
-        display(plotfn(*a, **kw))
+        display(fig)
         plt.close()
 
 except ImportError:

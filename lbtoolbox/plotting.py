@@ -278,7 +278,7 @@ def plot_cost(train_costs=None, valid_costs=None, cost=None,
     return ret
 
 
-def showcounts(*counters, axis=None, asort=True, tickrot='horizontal', percent=True, labels=None, colors=mpl.rcParams['axes.color_cycle'], legendkw={}):
+def showcounts(*counters, axis=None, asort=True, tickrot='horizontal', percent=True, labels=None, props=mpl.rcParams['axes.prop_cycle'], legendkw={}):
     # Need to make the union of all keys in case some counters don't have some key.
     names = np.array(list(set(chain(*counters))))
 
@@ -305,8 +305,8 @@ def showcounts(*counters, axis=None, asort=True, tickrot='horizontal', percent=T
 
     # Plot all the bars, but collect the return values for later legend.
     rects = [
-        ax.bar(np.arange(Nbars) + i*W/Ncolls, cnts, W/Ncolls, color=col)
-        for i, (cnts, col) in enumerate(zip(counts, cycle(colors)))
+        ax.bar(np.arange(Nbars) + i*W/Ncolls, cnts, W/Ncolls, **prop)
+        for i, (cnts, prop) in enumerate(zip(counts, cycle(props)))
     ]
 
     ax.set_xticks(np.arange(Nbars)+W/2)

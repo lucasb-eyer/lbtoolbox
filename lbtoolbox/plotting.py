@@ -279,6 +279,9 @@ def plot_cost(train_costs=None, valid_costs=None, cost=None,
 
 
 def showcounts(*counters, axis=None, asort=True, tickrot='horizontal', percent=True, labels=None, props=mpl.rcParams['axes.prop_cycle'], legendkw={}):
+    """
+    - `percent` can be `False`, `True`, or a number specifying the total by which to divide.
+    """
     # Need to make the union of all keys in case some counters don't have some key.
     names = np.array(list(set(chain(*counters))))
 
@@ -299,8 +302,8 @@ def showcounts(*counters, axis=None, asort=True, tickrot='horizontal', percent=T
     else:
         ret = ax = axis
 
-    if percent:
-        counts = [cnts.astype(float) / np.sum(cnts) for cnts in counts]
+    if percent is not False:
+        counts = [cnts.astype(float) / (np.sum(cnts) if percent is True else percent) for cnts in counts]
         ax.axes.yaxis.set_major_formatter(mpl.ticker.FuncFormatter(lambda x, pos: '{:.0f}'.format(x*100)))
 
     # Plot all the bars, but collect the return values for later legend.
@@ -312,7 +315,7 @@ def showcounts(*counters, axis=None, asort=True, tickrot='horizontal', percent=T
     ax.set_xticks(np.arange(Nbars)+W/2)
     ax.set_xticklabels(names, rotation=tickrot)
     ax.set_xlim(-margin, Nbars-1+W+margin)
-    ax.set_ylabel("Frequency [%]" if percent else "Occurences")
+    ax.set_ylabel("Occurences" if percent is False else "Frequency [%]")
 
     if labels is not None:
         assert len(labels) == len(rects), "Number of labels needs to equal number of collections!"

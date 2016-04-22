@@ -462,7 +462,7 @@ def linear_map(low=(0.094, 0.310, 0.635), high=(0.565, 0.392, 0.173)):
     return make_colormap([low, high])
 
 
-def confuse(conf, labels, display_order=None, figsize=5, showpct=0.05, rotticks=True, skipticks=None, topticks=True, cm=plt.cm.Spectral_r):
+def confuse(conf, labels, display_order=None, figsize=5, showpct=0.05, rotticks=True, skipticks=None, topticks=True, jacc='l', cm=plt.cm.Spectral_r):
     """
     Renders the confusion matrix as given in absolute counts by `conf`.
 
@@ -482,6 +482,10 @@ def confuse(conf, labels, display_order=None, figsize=5, showpct=0.05, rotticks=
 
     `topticks` can be used to switch title and x-ticks to be on bottom and top.
 
+    If `jacc` is either `'l'` or `'r'`, a single column of per-class Jaccard
+    intersection over union scores will be shown to the left or right of the
+    confusion matrix, respectively. Any other value hides that column.
+
     A different colormap (e.g. for those who like jet =)) can be used via `cm`.
     """
 
@@ -494,45 +498,58 @@ def confuse(conf, labels, display_order=None, figsize=5, showpct=0.05, rotticks=
         conf = conf[:,new_order][new_order]
         labels = display_order
 
-    N = len(labels)
+    if jacc in ('l', 'r'):
+        fig = plt.figure(1, figsize=(figsize, figsize))
+        grid = ImageGrid(fig, 111, nrows_ncols=(1,2), axes_pad=0.25, share_all=False, cbar_mode=None)
+        ax, axJacc = (grid[0], grid[1]) if jacc == 'r' else (grid[1], grid[0])
+
+        jacc = lbeva.jaccard_iou(conf)
+        axJacc.imshow(jacc[:,None], cmap=cm, interpolation='nearest', vmin=0, vmax=1)
+        axJacc.grid(False)
+    else:
+        fig, ax = plt.subplots(figsize=(figsize, figsize))
+        axJacc = None
+
+    # The grid is problematic because it's going through the middle of the bins.
+    ax.grid(False)
 
     # Compute relative values of confusion matrix (such that each row sums to 1)
     rconf = conf / conf.sum(axis=1, keepdims=True)
-
-    # Draw the confusion matrix itself.
-    fig, ax = plt.subplots(figsize=(figsize, figsize))
-    ax.set_aspect(1)
     im = ax.imshow(rconf, cmap=cm, interpolation='nearest', vmin=0, vmax=1)
-    # http://stackoverflow.com/a/26720502/2366315
-    fig.colorbar(im, fraction=0.046, pad=0.035)
 
     # Use string labels on the axes.
+    N = len(labels)
     step = 1+skipticks if skipticks not in (None, False) else 1
     ax.set_xticks(range(0, N, step))
     ax.set_yticks(range(0, N, step))
     ax.set_xticklabels(labels[::step], rotation='vertical' if rotticks else 'horizontal')
     ax.set_yticklabels(labels[::step])
-
     if topticks:
         ax.xaxis.tick_top()
+
+    if axJacc is not None:
+        axJacc.set_xticks([0])
+        axJacc.set_xticklabels(['Jaccard IoU'], rotation='vertical' if rotticks else 'horizontal')
+        if topticks:
+            axJacc.xaxis.tick_top()
 
     # Fill the boxes with percentage values
     if showpct not in (None, False) and showpct < 1:
         for x in range(N):
             for y in range(N):
-                if showpct <= 100*rconf[x,y]:
-                    ax.annotate("{:.1%}".format(rconf[x,y]), xy=(y,x), ha='center', va='center')
+                if showpct <= 100*rconf[y,x]:
+                    ax.annotate("{:.1%}".format(rconf[y,x]), xy=(x,y), ha='center', va='center')
+        if axJacc is not None:
+            for y in range(N):
+                axJacc.annotate("{:.1%}".format(jacc[y]), xy=(0,y), ha='center', va='center')
 
     # Finally, give the average accuracy and the class-mean in the title.
-    avgacc = conf.trace()/conf.sum()
-    clmean = rconf.trace()/N
-    title = "Avg. acc: {:.2%}, class mean: {:.2%}".format(avgacc, clmean)
+    title = "Avg. Jaccard IoU: {:.2%}, Accuracy: {:.2%}, Mean precision: {:.2%}".format(
+        np.mean(lbeva.jaccard_iou(conf)), lbeva.accuracy(conf), lbeva.mean_precision(conf)
+    )
     if topticks:
         ax.set_title(title, y=-0.15**(figsize**0.25), va='top')  # Magic!!
     else:
         ax.set_title(title, y=1.08)
-
-    # The grid is problematic because it's going through the middle of the bins.
-    ax.grid(False)
 
     return fig, ax

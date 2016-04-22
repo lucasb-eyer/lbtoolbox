@@ -93,13 +93,18 @@ def savefig(fig, name, **kwargs):
 # Makes a more-or-less square grid of subplots holding
 # len(`what`) axes. kwargs are passed along to mpl's `subplots`.
 def subplotgrid_for(what, axis=True, **kwargs):
-    try:
-        n = len(what)
-    except TypeError:
-        n = int(what)
+    # That's kinda ugly, but I'm not sure of a better and more practical way yet!
+    if isinstance(what, tuple) and len(what) == 2 and all(isinstance(w, numbers.Integral) for w in what):
+        rows, cols = what
+        n = rows*cols
+    else:
+        try:
+            n = len(what)
+        except TypeError:
+            n = int(what)
 
-    cols = int(np.ceil(np.sqrt(n)))
-    rows = int(np.ceil(float(n)/cols))
+        cols = int(np.ceil(np.sqrt(n)))
+        rows = int(np.ceil(float(n)/cols))
 
     kwargs.setdefault('sharex', True)
     kwargs.setdefault('sharey', True)

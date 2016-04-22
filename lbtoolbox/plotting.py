@@ -278,19 +278,27 @@ def plot_cost(train_costs=None, valid_costs=None, cost=None,
     return ret
 
 
-def showcounts(*counters, axis=None, asort=True, tickrot='horizontal', percent=True, labels=None, props=mpl.rcParams['axes.prop_cycle'], legendkw={}):
+def showcounts(*counters, axis=None, asort=True, tickrot='horizontal', percent=True, labels=None, names=None, props=mpl.rcParams['axes.prop_cycle'], legendkw={}):
     """
+    - `labels`: A list of names, one for each of the `counters`.
+    - `names`: A dict mapping keys from the `counters` to strings to be used as names of those keys.
+               If `None`, the keys will be used as names.
     - `percent` can be `False`, `True`, or a number specifying the total by which to divide.
     """
     # Need to make the union of all keys in case some counters don't have some key.
-    names = np.array(list(set(chain(*counters))))
+    keys = list(set(chain(*counters)))
+
+    # Either take the keys as names as-is, or map them using passed dict.
+    names = keys if names is None else [names[k] for k in keys]
 
     # Sort alphabetically for comparability if necessary.
     if asort:
-        names = np.sort(names)
+        sortidx = np.argsort(names)
+        names = [names[i] for i in sortidx]
+        keys = [keys[i] for i in sortidx]
 
     # Make all counts equal, inserting 0 for missing keys.
-    counts = [np.array([c[k] for k in names]) for c in counters]
+    counts = [np.array([c[k] for k in keys]) for c in counters]
 
     Nbars = len(names)      # Number of bars per collection
     Ncolls = len(counters)  # Number of collections
@@ -318,7 +326,7 @@ def showcounts(*counters, axis=None, asort=True, tickrot='horizontal', percent=T
     ax.set_ylabel("Occurences" if percent is False else "Frequency [%]")
 
     if labels is not None:
-        assert len(labels) == len(rects), "Number of labels needs to equal number of collections!"
+        assert len(labels) == len(rects), "Number of labels ({}) needs to equal number of collections ({})!".format(len(labels), len(rects))
         ax.legend((r[0] for r in rects), labels, **legendkw)
 
     return ret

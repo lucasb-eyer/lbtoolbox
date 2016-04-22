@@ -102,6 +102,44 @@ def imshow(im, ax=None, shape=None, bgr=False, normalize=None, colordim=2, *args
         return ret
 
 
+def lblcmap(n, base_cmap='Accent'):
+    """
+    Create a colormap of `n` discrete colors (e.g. for semantic segmentation)
+    based on the continuous `base_cmap`.
+    Also adds a mapping from non-finite inputs to black.
+    """
+    cmap = plt.cm.get_cmap(base_cmap, n)
+    cmap.set_bad(color=(0,0,0), alpha=1)
+    cmap.set_bad(color=(0,0,0), alpha=1)
+    return cmap
+
+
+def lblshow(lbl, ax, cmap, **kwargs):
+    """
+    Shows a labeled image, i.e. an image whose pixels are label-values.
+    The colors of the labels is defined by `cmap` (see `lblcmap`) but `-1` is mapped to `nan` first.
+    Care is taken so that a colorbar can be shown easily using `lblbar`.
+    """
+    # Make minus one become NaN, as it usually means "no label here"
+    lbl = np.array(lbl, dtype=float)
+    lbl[lbl == -1] = np.nan
+
+    return imshow_raw(lbl, ax=ax, cmap=cmap, vmin=-0.5, vmax=cmap.N-0.5)
+
+
+def lblbar(colorbar, names):
+    """
+    Adjusts a `colorbar` to show discrete class-`names` as ticks.
+
+    Hint: create the colorbar using either of:
+        - `fig.colorbar(im, cax=grid.cbar_axes[0])`
+        - `fig.colorbar(im, ax=axes.ravel().tolist(), fraction=0.046, pad=0.05)`
+    """
+    cb.set_ticks(np.arange(len(names)))
+    cb.set_ticklabels(tuple(names))
+    return cb
+
+
 # I'm also tired of manually making the line in the legend twice as fat as regular.
 def fatlegend(ax, *args, **kwargs):
     leg = ax.legend(*args, **kwargs)

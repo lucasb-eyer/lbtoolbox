@@ -124,7 +124,7 @@ class Monitor:
         return sum(map(len, self._online_losses))
 
     def _b_in_e(self):
-        return len(self._online_losses[-1])
+        return len(self._online_losses[-1]) if self._online_losses else 0
 
     def stats(self, *names):
         """Special shortcut syntax, now just for my comfort!

@@ -193,11 +193,16 @@ class Flipper(Augmenter):
     """
 
 
-    def __init__(self, dims):
+    def __init__(self, dims, tgtdims=None):
         """
         `dims` is a list or tuple of dimensions which should be flipped.
+        The corresponding dimensions in `tgtdims`, if any, will be flipped
+        in the target accordingly. (Useful for image-to-image learning.)
         """
-        self.dims = dims
+        self.dims = _u.tuplize(dims)
+        self.tgtdims = _u.tuplize(tgtdims)
+
+        assert tgtdims is None or len(self.dims) == len(self.tgtdims), "`tgtdims` must be the same length as `dims`. ({} != {})".format(len(self.tgtdims), len(self.dims))
 
 
     def npreds(self, fast):
@@ -205,9 +210,11 @@ class Flipper(Augmenter):
 
 
     def transform_train(self, img, *targets):
-        for d in self.dims:
+        for idim in range(len(self.dims)):
             if _np.random.random() < 0.5:
-                img = _u.flipany(img, d)
+                img = _u.flipany(img, self.dims[idim])
+                if self.tgtdims is not None:
+                    targets = [_u.flipany(t, self.tgtdims[idim]) for t in targets]
         return img, targets
 
 

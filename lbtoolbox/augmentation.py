@@ -136,7 +136,7 @@ class Augmenter(object):
         """
         May be used to learn some dataset-specific statistics for augmentation.
         """
-        pass
+        return self
 
 
     def transform_train(self, img, *targets):
@@ -422,6 +422,7 @@ class ColorPCA(Augmenter):
         # To (Channel, MiniBatch*H*W)
         Xtr = Xtr.reshape((Xtr.shape[0], -1))
         self.l, self.V = _np.linalg.eig(_np.cov(Xtr))
+        return self
 
     def transform_train(self, img, *targets):
         alpha = _np.random.randn(3)*self.std

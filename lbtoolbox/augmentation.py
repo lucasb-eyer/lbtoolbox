@@ -27,17 +27,6 @@ class AugmentationPipeline(object):
             a.fit(Xtr, ytr)
 
 
-    def outshape(self, inshape):
-        """
-        Compute the shape of the result of passing an image of `inshape`
-        through my augmentations serially.
-        """
-        sh = inshape
-        for a in self.augmenters:
-            sh = a.outshape(sh)
-        return sh
-
-
     def _pred_indices(self, fast):
         return _it.product(*(range(aug.npreds(fast)) for aug in self.augmenters))
 
@@ -85,13 +74,16 @@ class AugmentationPipeline(object):
         B = batch.shape[0]
 
         # Reserve space for the output
-        out = _np.empty((B,) + self.outshape(batch.shape[1:]), dtype=batch.dtype)
-        outtgts = tuple(_np.empty_like(t) for t in targets)
+        out = None
+        outtgts = None
 
         # Transform the images, one by one, independently.
         # Otherwise, the whole batch would be correlated.
         for i in range(B):
             img, tgts = self.augimg_train(batch[i], *(t[i] for t in targets))
+            if out is None:
+                out = _np.empty((B,) + img.shape, dtype=img.dtype)
+                outtgts = tuple(_np.empty((B,) + t.shape, dtype=t.dtype) for t in tgts)
             out[i] = img
             for ot, t in zip(outtgts, tgts):
                 ot[i] = t
@@ -110,7 +102,7 @@ class AugmentationPipeline(object):
         B = batch.shape[0]
 
         # Reserve space for the output
-        out = _np.empty((B,) + self.outshape(batch.shape[1:]), dtype=batch.dtype)
+        out = None
 
         # Go through all possible combinations of transforms we get from the
         # augmenters for prediction.
@@ -121,6 +113,8 @@ class AugmentationPipeline(object):
                 img = batch[i]
                 for ia, a in zip(iaug, self.augmenters):
                     img = a.transform_pred(img, ia, fast)
+                if out is None:
+                    out = _np.empty((B,) + img.shape, dtype=img.dtype)
                 out[i] = img
             yield out
 
@@ -145,13 +139,6 @@ class Augmenter(object):
         pass
 
 
-    def outshape(self, inshape):
-        """
-        Return the shape of the transform of an image of `inshape` shape.
-        """
-        return inshape
-
-
     def transform_train(self, img, *targets):
         """
         Randomly transform the given `img` for generating a new training sample.
@@ -173,10 +160,6 @@ class Flattener(Augmenter):
     """
 
 
-    def outshape(self, inshape):
-        return (_np.prod(inshape),)
-
-
     def transform_train(self, img, *targets):
         return img.flat, targets
 
@@ -193,10 +176,6 @@ class Reshaper(Augmenter):
 
     def __init__(self, shape):
         self.shape = shape
-
-
-    def outshape(self, inshape):
-        return self.shape
 
 
     def transform_train(self, img, *targets):
@@ -269,16 +248,6 @@ class Cropper(Augmenter):
 
     def npreds(self, fast):
         return 5 if not fast else 1
-
-
-    def outshape(self, inshape):
-        assert inshape[self.ydim] >= self.osh[0], "Can't crop larger than input!"
-        assert inshape[self.xdim] >= self.osh[1], "Can't crop larger than input!"
-
-        osh = list(inshape)
-        osh[self.ydim] = self.osh[0]
-        osh[self.xdim] = self.osh[1]
-        return tuple(osh)
 
 
     def transform_train(self, img, *targets):

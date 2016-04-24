@@ -24,6 +24,7 @@ class AugmentationPipeline(object):
         self.augmenters = list(augmenters)
 
         for a in self.augmenters:
+            # TODO: This is broken, every `a` should get a transformed thing.
             a.fit(Xtr, ytr)
 
 
@@ -433,7 +434,7 @@ class ColorPCA(Augmenter):
 
     def transform_train(self, img, *targets):
         alpha = _np.random.randn(3)*self.std
-        noise = _np.dot(self.V, alpha * self.l)
+        noise = _np.dot(self.V, alpha * self.l).astype(img.dtype)
         # TODO: Find a better way to broadcast this addition!
         return img + noise[:,_np.newaxis,_np.newaxis], targets
 

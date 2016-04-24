@@ -83,6 +83,7 @@ class QueryHandler(object):
             self.rep.bind(addr)
         self.rep.setsockopt(nnpy.SOL_SOCKET, nnpy.RCVTIMEO, 1000) # in ms
         self.rep.setsockopt(nnpy.SOL_SOCKET, nnpy.SNDTIMEO, 1000) # in ms
+        # self.rep.setsockopt(nnpy.SOL_SOCKET, nnpy.SNDMAXSIZE, -1)
 
     def tick(self):
         try:

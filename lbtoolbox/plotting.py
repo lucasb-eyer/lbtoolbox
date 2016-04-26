@@ -3,6 +3,7 @@
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import ImageGrid
 
 from os.path import join as pjoin
 from datetime import datetime
@@ -11,6 +12,7 @@ import numbers
 import warnings
 
 from .util import tuplize, flipany
+from .evaluation import jaccard_iou, accuracy, mean_precision
 
 
 try:
@@ -503,7 +505,7 @@ def confuse(conf, labels, display_order=None, figsize=5, showpct=0.05, rotticks=
         grid = ImageGrid(fig, 111, nrows_ncols=(1,2), axes_pad=0.25, share_all=False, cbar_mode=None)
         ax, axJacc = (grid[0], grid[1]) if jacc == 'r' else (grid[1], grid[0])
 
-        jacc = lbeva.jaccard_iou(conf)
+        jacc = jaccard_iou(conf)
         axJacc.imshow(jacc[:,None], cmap=cm, interpolation='nearest', vmin=0, vmax=1)
         axJacc.grid(False)
     else:
@@ -545,7 +547,7 @@ def confuse(conf, labels, display_order=None, figsize=5, showpct=0.05, rotticks=
 
     # Finally, give the average accuracy and the class-mean in the title.
     title = "Avg. Jaccard IoU: {:.2%}, Accuracy: {:.2%}, Mean precision: {:.2%}".format(
-        np.mean(lbeva.jaccard_iou(conf)), lbeva.accuracy(conf), lbeva.mean_precision(conf)
+        np.mean(jaccard_iou(conf)), accuracy(conf), mean_precision(conf)
     )
     if topticks:
         ax.set_title(title, y=-0.15**(figsize**0.25), va='top')  # Magic!!

@@ -421,10 +421,15 @@ class Zoomer(Augmenter):
 
 
 class ColorPCA(Augmenter):
-    def __init__(self, std=0.1):
+    def __init__(self, std=0.1, l=None, V=None):
         self.std = std
+        self.l = l
+        self.V = V
 
     def fit(self, Xtr, ytr):
+        if self.l is not None and self.V is not None:
+            return self
+
         # From (MiniBatch, Channel, ...) to (Channel, MiniBatch, ...)
         Xtr = _np.rollaxis(Xtr, 1)
         # To (Channel, MiniBatch*H*W)

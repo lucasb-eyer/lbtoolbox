@@ -122,14 +122,15 @@ def batched(batchsize, *arrays, **kw):
     # And now maybe return the last batch.
     rest = n % batchsize
     if rest != 0 and not droplast:
-        yield maybetuple(_fancyidx(x, indices[-rest:]) for x in arrays)
+        i = (n//batchsize)*batchsize
+        yield maybetuple(_fancyidx(x, indices[i:n]) for x in arrays)
 
 
 # A work-around for supporting fancy-indexing for numpy lists/tuples.
 def _fancyidx(x, idx):
-    try:
+    if isinstance(x, _np.ndarray):
         return x[idx]
-    except TypeError:
+    else:
         return [x[i] for i in idx]
 
 

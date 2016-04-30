@@ -86,15 +86,21 @@ def batched(batchsize, *arrays, **kw):
     Valid keyword arguments:
 
     - `shuf`: Shuffle the whole dataset before going through it.
+       Default: `False`.
     - `shuf_batches`: Batch the data and go through the batches in random order.
        This is useful e.g. if the data is sorted by length, to have batches only
        contain data of the same length, but go through lenghts randomly.
+       Default: `False`.
     - `droplast`: Do not return the last batch if it's smaller than `batchsize`.
+       Default: `False`.
+    - `N`: upper bound to the total number of returned entries (not batches).
+       Default: `None`, meaning batch through everything.
     """
 
     shuf = kw.get('shuf', False)
     shuf_batches = kw.get('shuf_batches', False)
     droplast = kw.get('droplast', False)
+    N = kw.get('N', None)
 
     assert(len(arrays) > 0)
 
@@ -103,7 +109,7 @@ def batched(batchsize, *arrays, **kw):
     bs = batchsize
 
     # Assumption: all arrays have the same 1st dimension as the first one.
-    assert(all(len(x) == n for x in arrays))
+    assert(all(len(x) == n if N is None else len(x) >= N for x in arrays))
 
     if shuf is not False:
         indices = check_random_state(shuf).permutation(n)
@@ -114,6 +120,10 @@ def batched(batchsize, *arrays, **kw):
         indices = _np.concatenate([indices[i:i+bs] for i in _np.r_[batch_indices, last]])
     else:
         indices = _np.arange(n)
+
+    # Now, cut off at `N`, if specified.
+    if N is not None:
+        n = min(n, N)
 
     # First, go through all full batches.
     for i in range(n // batchsize):

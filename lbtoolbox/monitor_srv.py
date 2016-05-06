@@ -31,6 +31,7 @@ class Store:
         # TODO: archive instead of delete?
         #       for this, might want to record starting datetime in c'tor.
         if topic in self.store[name]:
+            print("Deleting {}/{}".format(name, topic))
             del self.store[name][topic]
 
 
@@ -98,6 +99,7 @@ class QueryHandler(object):
 
         mon = self.store.get(proj, desc)
         ans = mon.query(query)
+        print("Sending {:.2f}k message".format(len(ans)/1024))
         self.rep.send(ans)
 
 

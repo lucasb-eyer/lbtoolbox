@@ -172,6 +172,7 @@ try:
             return e, b_in_e, loss
 
         def _recv_loss(self, e, b_in_e, loss):
+            print("loss e:{} b:{} l:{}".format(e, b_in_e, loss))
             # NOTE: this method fills up potentially empty entries
             #       because messages might arrive out-of-order!
             e = e-1  # Epochs start counting at 1, arrays at 0
@@ -191,6 +192,7 @@ try:
             return int(e), bytes2np(losses)
 
         def _recv_elosses(self, e, losses):
+            print("losses e:{} l:{}".format(e, losses))
             # NOTE: this method fills up potentially empty entries
             #       because messages might arrive out-of-order!
             while len(self._online_losses) <= e:
@@ -209,6 +211,7 @@ try:
             return name.decode('utf-8'), int(e), int(b), bytes2np(val)
 
         def _recv_stat(self, name, e, b, val):
+            print("stat@{},{} {} v:{}".format(e, b, name, val))
             self._stats[name].record(val, e, b)
 
         def recv(self, msg, body):

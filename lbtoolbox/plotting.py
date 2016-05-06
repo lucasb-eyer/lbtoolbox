@@ -166,6 +166,25 @@ def cm_angle_from(base):
 cm_angle_summer = cm_angle_from(mpl.cm.summer)
 
 
+def zoomtext(fig_or_axes, factor=2):
+    texts = []
+
+    try:
+        # It's a figure!
+        axes = fig_or_axes.axes
+        texts += fig_or_axes.texts
+    except AttributeError:
+        axes = fig_or_axes
+
+    for ax in tuplize(axes):
+        texts += [ax.title, ax.xaxis.label, ax.yaxis.label]
+        texts += ax.get_xticklabels()
+        texts += ax.get_yticklabels()
+
+    for t in texts:
+        t.set_fontsize(round(t.get_fontsize() * factor))
+
+
 def savefig(fig, name, **kwargs):
     kwargs.setdefault('transparent', True)
     kwargs.setdefault('bbox_inches', 'tight')

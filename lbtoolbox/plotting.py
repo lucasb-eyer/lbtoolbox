@@ -185,12 +185,23 @@ def zoomtext(fig_or_axes, factor=2):
         t.set_fontsize(round(t.get_fontsize() * factor))
 
 
-def savefig(fig, name, **kwargs):
-    kwargs.setdefault('transparent', True)
+def savefig(fig, name, ticksize=None, pdf=True, **kwargs):
+    #kwargs.setdefault('transparent', True)
     kwargs.setdefault('bbox_inches', 'tight')
+    #kwargs.setdefault('pad_inches', 0)
+
+    if ticksize is not None:
+        if isinstance(ticksize, numbers.Integral):
+            majsz = minsz = ticksize
+        else:
+            majsz, minsz = ticksize
+        for ax in fig.axes:
+            ax.tick_params(axis='both', which='major', labelsize=majsz)
+            ax.tick_params(axis='both', which='major', labelsize=majsz)
 
     fig.savefig(name + '.png', **kwargs)
-    fig.savefig(name + '.pdf', **kwargs)
+    if pdf:
+        fig.savefig(name + '.pdf', **kwargs)
 
 
 # Makes a more-or-less square grid of subplots holding

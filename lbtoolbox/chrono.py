@@ -21,10 +21,11 @@ class Chrono:
             timings = timings[1:]
         return sum(timings)/len(timings)
 
-    def __str__(self, fmt='{}'):
-        avgtimes = {k: self.avgtime(k) for k in self.timings}
+    def __str__(self, fmt='{:{w}.5f}', dropfirst=False):
+        avgtimes = {k: self.avgtime(k, dropfirst) for k in self.timings}
         l = max(map(len, avgtimes))
-        return '\n'.join(("{:{l}s}: "+fmt).format(k,v,l=l) for k,v in sorted(avgtimes.items(), key=lambda t: t[1], reverse=True))
+        w = max(len(fmt.format(v, w=0)) for v in avgtimes.values())
+        return '\n'.join(("{:{l}s}: "+fmt+"s").format(k,v,l=l,w=w) for k,v in sorted(avgtimes.items(), key=lambda t: t[1], reverse=True))
 
 
 class _ChronoCM:

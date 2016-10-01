@@ -1,4 +1,24 @@
 #!/usr/bin/env python3
+"""My plotting setup
+
+%matplotlib inline
+%config InlineBackend.figure_format = 'retina'
+
+# Font which got unicode math stuff.
+import matplotlib as mpl
+mpl.rcParams['font.family'] = 'DejaVu Sans'
+
+# Much more readable plots
+import matplotlib.pyplot as plt
+plt.style.use('ggplot')
+
+# Make NaNs black in my fav. colormaps:
+mpl.cm.Spectral.set_bad(color=(0,0,0), alpha=1)
+mpl.cm.Spectral_r.set_bad(color=(0,0,0), alpha=1)
+
+# Much better than plt.subplots()
+from mpl_toolkits.axes_grid1 import ImageGrid
+"""
 
 import numpy as np
 import matplotlib as mpl

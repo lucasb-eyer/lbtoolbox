@@ -46,11 +46,11 @@ def style_figure(fig, objects=True):
 
     #fig.title.align = 'center'  # Doesn't work well yet.
 
-    ct = fig.tools[0]
-    ct.line_color = '#555555'
-    ct.line_width = 2
+    #ct = fig.tools[0]
+    #ct.line_color = '#555555'
+    #ct.line_width = 2
 
-    if objects_too:
+    if objects:
         fig = style_figure_objects(fig)
 
     return fig

@@ -128,18 +128,30 @@ def batched(batchsize, *arrays, **kw):
     # First, go through all full batches.
     for i in range(n // batchsize):
         yield maybetuple(_fancyidx(x, indices[i*batchsize:(i+1)*batchsize]) for x in arrays)
+        progress(min((i+1)*batchsize, len(indices)), len(indices))
 
     # And now maybe return the last batch.
     rest = n % batchsize
     if rest != 0 and not droplast:
         i = (n//batchsize)*batchsize
         yield maybetuple(_fancyidx(x, indices[i:n]) for x in arrays)
+        progress(len(indices), len(indices))
 
+
+try:
+    import h5py as _h5
+    _has_h5py = True
+except ImportError:
+    _has_h5py = False
 
 # A work-around for supporting fancy-indexing for numpy lists/tuples.
 def _fancyidx(x, idx):
     if isinstance(x, _np.ndarray):
         return x[idx]
+    elif _has_h5py and isinstance(x, _h5.Dataset):
+        # Indices for fancy-indexing need to be sorted here!
+        sort = _np.argsort(idx)
+        return x[idx[sort].tolist()][sort]
     else:
         return [x[i] for i in idx]
 

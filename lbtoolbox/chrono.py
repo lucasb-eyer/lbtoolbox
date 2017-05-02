@@ -7,7 +7,7 @@ class Chrono:
         self.timings = OrderedDict()
 
     def measure(self, what):
-        return _ChronoCM(lambda t: self._done(what, t))
+        return Timer(lambda t: self._done(what, t))
 
     def _done(self, what, t):
         self.timings.setdefault(what, []).append(t)
@@ -28,7 +28,7 @@ class Chrono:
         return '\n'.join(("{:{l}s}: "+fmt+"s").format(k,v,l=l,w=w) for k,v in sorted(avgtimes.items(), key=lambda t: t[1], reverse=True))
 
 
-class _ChronoCM:
+class Timer:
     def __init__(self, donecb):
         self.cb = donecb
 
@@ -38,3 +38,9 @@ class _ChronoCM:
     def __exit__(self, exc_type, exc_value, traceback):
         t = time() - self.t0
         self.cb(t)
+
+
+class PrintTimer(Timer):
+    def __init__(self, msg, *a, **kw):
+        Timer.__init__(self, lambda t: print("Done in {:.3g}s".format(t), flush=True))
+        print(msg.format(*a, **kw), end='', flush=True)

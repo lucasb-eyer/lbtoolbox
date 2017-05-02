@@ -7,7 +7,7 @@ import torch.nn.init
 
 def maybe_cuda(what, use_cuda=True):
     """ Moves `what` to CUDA and returns it, if `use_cuda` and it's available. """
-    if torch.cuda.is_available() and use_cuda:
+    if use_cuda and torch.cuda.is_available():
         what = what.cuda()
     return what
 

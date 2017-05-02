@@ -275,20 +275,22 @@ class Uninterrupt(object):
         while not u.interrupted:
             # train
     """
-    def __init__(self, sig=signal.SIGINT):
-        self.sig = sig
+    def __init__(self, sigs=[signal.SIGINT]):
+        self.sigs = sigs
 
     def __enter__(self):
         self.interrupted = False
         self.released = False
 
-        self.orig_handler = signal.getsignal(self.sig)
+        self.orig_handlers = [signal.getsignal(sig) for sig in self.sigs]
 
         def handler(signum, frame):
             self.release()
             self.interrupted = True
 
-        signal.signal(self.sig, handler)
+        for sig in self.sigs:
+            signal.signal(sig, handler)
+
         return self
 
     def __exit__(self, type_, value, tb):
@@ -296,7 +298,8 @@ class Uninterrupt(object):
 
     def release(self):
         if not self.released:
-            signal.signal(self.sig, self.orig_handler)
+            for sig, orig in zip(self.sigs, self.orig_handlers):
+                signal.signal(sig, orig)
             self.released = True
 
 

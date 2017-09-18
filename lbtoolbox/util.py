@@ -95,12 +95,14 @@ def batched(batchsize, *arrays, **kw):
        Default: `False`.
     - `N`: upper bound to the total number of returned entries (not batches).
        Default: `None`, meaning batch through everything.
+    - `progress`: A function to call for progress updates, fn(i, N).
     """
 
     shuf = kw.get('shuf', False)
     shuf_batches = kw.get('shuf_batches', False)
     droplast = kw.get('droplast', False)
     N = kw.get('N', None)
+    progress = kw.get('progress', lambda i, N: None)
 
     assert(len(arrays) > 0)
 

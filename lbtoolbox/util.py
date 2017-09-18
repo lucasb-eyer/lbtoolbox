@@ -278,11 +278,14 @@ class Uninterrupt(object):
     def __init__(self, sigs=[signal.SIGINT], verbose=False):
         self.sigs = sigs
         self.verbose = verbose
+        self.interrupted = False
+        self.orig_handlers = None
 
     def __enter__(self):
-        self.interrupted = False
-        self.released = False
+        if self.orig_handlers is not None:
+            raise ValueError("Can only enter `Uninterrupt` once!")
 
+        self.interrupted = False
         self.orig_handlers = [signal.getsignal(sig) for sig in self.sigs]
 
         def handler(signum, frame):
@@ -300,10 +303,10 @@ class Uninterrupt(object):
         self.release()
 
     def release(self):
-        if not self.released:
+        if self.orig_handlers is not None:
             for sig, orig in zip(self.sigs, self.orig_handlers):
                 signal.signal(sig, orig)
-            self.released = True
+            self.orig_handlers = None
 
 
 def truncrandn_approx(lo, hi, *dims):

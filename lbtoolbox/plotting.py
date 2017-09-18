@@ -172,6 +172,7 @@ def fatlegend(ax=None, *args, **kwargs):
 
     for l in leg.legendHandles:
         l.set_linewidth(l.get_linewidth()*2.0)
+        l.set_alpha(1)
     return leg
 
 

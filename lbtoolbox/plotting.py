@@ -163,9 +163,13 @@ def lblbar(colorbar, names):
     return cb
 
 
-# I'm also tired of manually making the line in the legend twice as fat as regular.
-def fatlegend(ax, *args, **kwargs):
-    leg = ax.legend(*args, **kwargs)
+# I'm also tired of manually making the line in the legend twice as fat as regular, and not-transparent.
+def fatlegend(ax=None, *args, **kwargs):
+    if ax is not None:
+        leg = ax.legend(*args, **kwargs)
+    else:
+        leg = plt.legend(*args, **kwargs)
+
     for l in leg.legendHandles:
         l.set_linewidth(l.get_linewidth()*2.0)
     return leg

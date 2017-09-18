@@ -329,3 +329,114 @@ def truncrandn_approx(lo, hi, *dims):
         outside = (r < lo) | (hi < r)
         r[outside] = _np.random.uniform(lo, hi, sum(outside))
         return r
+
+
+def floorlog10(v):
+    """Round down to the nearest number in the current power of ten.
+
+    Useful for limits in log-axis plots.
+
+    floorlog10(98.3) -> 90.0
+    floorlog10(11.5) -> 10.0
+    floorlog10(9.2) -> 9.0
+    floorlog10(0.123) -> 0.1
+    """
+    n = _np.log10(v)
+    n = _np.floor(n)
+    n = 10**n
+    return (v//n)*n
+
+
+def ceillog10(v):
+    """Round up to the nearest number in the current power of ten.
+
+    Useful for limits in log-axis plots.
+
+    floorlog10(98.3) -> 100.0
+    floorlog10(11.5) -> 20.0
+    floorlog10(9.2) -> 10.0
+    floorlog10(0.123) -> 0.2
+    """
+    n = _np.log10(v)
+    n = _np.floor(n)
+    n = 10**n
+    return (v//n+1)*n
+
+
+def randints(los, his, shape=1, dtype='l'):
+    """
+    Like np.random.randint (i.e. [los,his) domain) but a whole array of them.
+    Probably not the most efficient implementation, but good enough for now.
+
+    Returns array of shape (len(los), *shape)
+    """
+    assert len(los) == len(his)
+
+    if not isinstance(shape, tuple):
+        shape = (shape,) if shape != 1 else tuple()
+
+    x = _np.empty((len(los),) + shape, dtype)
+    for i, (lo, hi) in enumerate(zip(los, his)):
+        x[i] = _np.random.randint(lo, hi, shape, dtype)
+    return x
+
+
+def create_dataset_like(g, name, other, **kwupdate):
+    kw = {k: kwupdate.get(k, getattr(other, k)) for k in [
+        'shape', 'dtype', 'chunks', 'maxshape', 'compression',
+        'compression_opts', 'scaleoffset', 'shuffle', 'fletcher32', 'fillvalue']
+    }
+
+    # Avoid 
+    if kw['maxshape'] == kw['shape']:
+        del kw['maxshape']
+
+    return g.create_dataset(name, **kw)
+
+
+def ramp(e, e0, v0, e1, v1):
+    """
+    Return `v0` until `e` reaches `e0`, then linearly interpolate
+    to `v1` when `e` reaches `e1` and return `v1` thereafter.
+
+    Copyright (C) 2017 Lucas Beyer - http://lucasb.eyer.be =)
+    """
+    if e < e0:
+        return v0
+    elif e < e1:
+        return v0 + (v1-v0)*(e-e0)/(e1-e0)
+    else:
+        return v1
+
+
+def expdec(e, e0, v0, e1, v1, eNone=float('inf')):
+    """
+    Return `v0` until `e` reaches `e0`, then exponentially decay
+    to `v1` when `e` reaches `e1` and return `v1` thereafter, until
+    reaching `eNone`, after which it returns `None`.
+
+    Copyright (C) 2017 Lucas Beyer - http://lucasb.eyer.be =)
+    """
+    if e < e0:
+        return v0
+    elif e < e1:
+        return v0 * (v1/v0)**((e-e0)/(e1-e0))
+    elif e < eNone:
+        return v1
+    else:
+        return None
+
+
+def stairs(e, v, *evs):
+    """ Implements a typical "stairs" schedule for learning-rates.
+    Best explained by example:
+
+    stairs(e, 0.1, 10, 0.01, 20, 0.001)
+
+    will return 0.1 if e<10, 0.01 if 10<=e<20, and 0.001 if 20<=e
+    """
+    for e0, v0 in zip(evs[::2], evs[1::2]):
+        if e < e0:
+            break
+        v = v0
+    return v

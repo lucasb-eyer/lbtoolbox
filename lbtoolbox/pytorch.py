@@ -18,9 +18,9 @@ def init(mod, init_=None, bias=0):
 
     Useful for the `Sequential` constructor and friends.
     """
-    if init_ is not None:
+    if init_ is not None and getattr(mod, 'weight', None) is not None:
         init_(mod.weight)
-    if hasattr(mod, 'bias'):
+    if getattr(mod, 'bias', None) is not None:
         torch.nn.init.constant(mod.bias, bias)
     return mod
 

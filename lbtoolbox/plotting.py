@@ -277,7 +277,7 @@ def show_coefs(coefs, shape, names=repeat(None)):
     return fig, axes
 
 
-def annotline(ax, line, where, fmt=None, xytext=(5,5), halign='left', valign='bottom', markx=False, linekw={}, textkw={}):
+def annotline(ax, line, where, fmt=None, xytext=(5,5), halign='left', valign='bottom', markx=False, xhalign='right', xvalign='bottom', linekw={}, textkw={}):
     # Not sure about that orig=True, for now it never made a difference but it sounds better.
     x, y = line.get_data(orig=True)
 
@@ -315,7 +315,7 @@ def annotline(ax, line, where, fmt=None, xytext=(5,5), halign='left', valign='bo
         txt = fmt.format(wherey)
 
     ax.annotate(txt,
-        xy=(x[0], wherey), xycoords='data',
+        xy=(np.min(x), wherey), xycoords='data',
         xytext=xytext, textcoords='offset points',  # Potential alternative: 'axes fraction'
         ha=halign, va=valign,
     )
@@ -324,6 +324,11 @@ def annotline(ax, line, where, fmt=None, xytext=(5,5), halign='left', valign='bo
     if markx:
         for x in wherexs:
             ax.axvline(x, **linekw)
+            ax.annotate(ax.yaxis.get_major_formatter().format_data_short(x),
+                xy=(x, ax.get_ylim()[0]), xycoords='data',
+                xytext=xytext, textcoords='offset points',  # Potential alternative: 'axes fraction'
+                ha=xhalign, va=xvalign,
+            )
 
 
 def plot_training(train_errs=None, valid_errs=None, mistakes=None,

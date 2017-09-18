@@ -275,8 +275,9 @@ class Uninterrupt(object):
         while not u.interrupted:
             # train
     """
-    def __init__(self, sigs=[signal.SIGINT]):
+    def __init__(self, sigs=[signal.SIGINT], verbose=False):
         self.sigs = sigs
+        self.verbose = verbose
 
     def __enter__(self):
         self.interrupted = False
@@ -287,6 +288,8 @@ class Uninterrupt(object):
         def handler(signum, frame):
             self.release()
             self.interrupted = True
+            if self.verbose:
+                print("Interruption scheduled...", flush=True)
 
         for sig in self.sigs:
             signal.signal(sig, handler)

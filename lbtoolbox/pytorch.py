@@ -5,10 +5,10 @@ import torch.nn as nn
 import torch.nn.init
 
 
-def maybe_cuda(what, use_cuda=True):
+def maybe_cuda(what, use_cuda=True, **kw):
     """ Moves `what` to CUDA and returns it, if `use_cuda` and it's available. """
     if use_cuda and torch.cuda.is_available():
-        what = what.cuda()
+        what = what.cuda(**kw)
     return what
 
 

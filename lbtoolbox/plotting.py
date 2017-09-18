@@ -89,25 +89,26 @@ def imshow(im, ax=None, shape=None, bgr=False, normalize=None, colordim=2, *args
     if colordim != 2:
         im = np.rollaxis(im, colordim, 3)
 
-    # If `normalize` is a tuple, we get the image into that range first.
-    if normalize is not None and len(normalize) == 2:
-        im = (im.astype(np.float) - normalize[0])/(normalize[1] - normalize[0])
-
     kwargs.setdefault('cmap', mpl.cm.Spectral_r)
 
-    # In the case of a "heatmap," we make it symmetric around 0.
-    if len(im.shape) == 2:
-        extr = np.max(np.abs(im))
-        kwargs.setdefault('vmin', -extr)
-        kwargs.setdefault('vmax',  extr)
+    # In the case of a "heatmap," we make it symmetric around 0, unless `normalize` is explicitly passed.
+    if im.ndim == 2:
+        if normalize is not None and len(normalize) == 2:
+            lo, hi = normalize
+        else:
+            extr = np.nanmax(np.abs(im))
+            lo, hi = -extr, extr
+        kwargs.setdefault('vmin', lo)
+        kwargs.setdefault('vmax', hi)
     # But in the case of RGB images, we need to get them into "regular" range [0-255].
-    elif len(im.shape) == 3 and im.shape[2] == 3 and im.dtype != np.uint8:
-        if 0 <= np.min(im) and 10 < np.max(im):
+    elif im.ndim == 3 and im.shape[2] == 3 and im.dtype != np.uint8:
+        if 0 <= np.nanmin(im) and 10 < np.nanmax(im):
             warnings.warn("Image looks like [0-255] RGB but dtype isn't `uint8`. Renormalizing.")
         if normalize is not None and len(normalize) == 2:
-            im = (255*im).astype(np.uint8)
+            lo, hi = normalize
         else:
-            im = (255*(im.astype(np.float) - np.min(im))/(np.max(im)-np.min(im))).astype(np.uint8)
+            lo, hi = np.nanmin(im), np.nanmax(im)
+        im = np.clip(255*(im.astype(np.float) - lo)/(hi - lo), 0, 255).astype(np.uint8)
 
     if ax is not None:
         ax.grid(False)

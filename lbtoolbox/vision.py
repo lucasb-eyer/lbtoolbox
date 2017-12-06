@@ -7,6 +7,14 @@ try:
 
 
     def resize_img(img, shape=None, interp=None, is_chw=False):
+        """ Resize image.
+
+        Args:
+            img: The image to be resized.
+            shape: (h,w)-tuple of target size
+            interp: None for inter-area, 'bicubic' for bicubic.
+            is_chw: obvious.
+        """
         if shape is None:
             return np.array(img)
 
@@ -111,8 +119,31 @@ try:
 except ImportError:
     import scipy
 
+    try:
+        # This is what scipy's imread does lazily.
+        from PIL import Image as _Image
+
+        def imread(fname):
+            # This does what CV_LOAD_IMAGE_ANYDEPTH does by default.
+            return np.array(_Image.open(fname))
+
+    except ImportError:
+
+        def imread(fname):
+            raise ImportError(
+                "Neither OpenCV nor the Python Imaging Library (PIL) is "
+                "installed. Please install either for loading images."
+            )
+
 
     def resize_img(img, shape=None, interp='bilinear'):
+        """ Resize image.
+
+        Args:
+            img: The image to be resized.
+            shape: (h,w)-tuple of target size
+            interp: 'bilinear' for bilinear, more see scipy's imresize.
+        """
         if shape is None:
             return np.array(img)
 

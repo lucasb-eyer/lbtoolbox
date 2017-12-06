@@ -5,10 +5,15 @@ import torch.nn as nn
 import torch.nn.init
 
 
-def maybe_cuda(what, use_cuda=True, **kw):
-    """ Moves `what` to CUDA and returns it, if `use_cuda` and it's available. """
-    if use_cuda and torch.cuda.is_available():
-        what = what.cuda(**kw)
+def maybe_cuda(what, use_cuda=0, **kw):
+    """ Moves `what` to CUDA and returns it, if `use_cuda` and it's available.
+
+    Actually, `use_cuda` is the GPU-index to be used, which means `0` uses the
+    first GPU. To not use GPUs, set `use_cuda` to `False` instead.
+    """
+    if use_cuda is True: use_cuda = 0  # Backwards compatibility.
+    if use_cuda is not False and torch.cuda.is_available():
+        what = what.cuda(device=use_cuda, **kw)
     return what
 
 

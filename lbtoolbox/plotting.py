@@ -475,7 +475,7 @@ def showcounts(*counters, axis=None, sort=None, tickrot='horizontal', percent=Tr
 
     # Plot all the bars, but collect the return values for later legend.
     rects = [
-        ax.bar(np.arange(Nbars) + i*W/Ncolls, cnts, W/Ncolls, **prop)
+        ax.bar(np.arange(Nbars) + (i+0.5)*W/Ncolls, cnts, W/Ncolls, **prop)
         for i, (cnts, prop) in enumerate(zip(counts, cycle(props)))
     ]
 

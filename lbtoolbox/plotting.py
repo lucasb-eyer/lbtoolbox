@@ -39,6 +39,8 @@ try:
     from IPython.display import display, clear_output
 
     def liveplot(plotfn, *a, savedir=None, savename=None, **kw):
+        # See https://github.com/ipython/ipython/issues/7270#issuecomment-355276432
+        # TL;DR: Call matplotlib.interactive(False) beforehand.
         fig = plotfn(*a, **kw)
         if fig is None:
             return

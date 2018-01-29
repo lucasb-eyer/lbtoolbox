@@ -428,12 +428,16 @@ def plot_cost(train_costs=None, valid_costs=None, cost=None,
     return ret
 
 
-def showcounts(*counters, axis=None, asort=True, tickrot='horizontal', percent=True, labels=None, names=None, props=mpl.rcParams['axes.prop_cycle'], legendkw={}):
+def showcounts(*counters, axis=None, sort=None, tickrot='horizontal', percent=True, labels=None, names=None, props=mpl.rcParams['axes.prop_cycle'], legendkw={}):
     """
     - `labels`: A list of names, one for each of the `counters`.
     - `names`: A dict mapping keys from the `counters` to strings to be used as names of those keys.
                If `None`, the keys will be used as names.
     - `percent` can be `False`, `True`, or a number specifying the total by which to divide.
+    - `sort` can be:
+        - `None` to keep the same order as in the first counter, remaining entries being unsorted.
+        - 'name' for alphabetical sorting by key,
+        - 'freq' for sorting by frequency in the first counter.
     """
     # Need to make the union of all keys in case some counters don't have some key.
     keys = list(set(chain(*counters)))
@@ -442,10 +446,15 @@ def showcounts(*counters, axis=None, asort=True, tickrot='horizontal', percent=T
     names = keys if names is None else [names[k] for k in keys]
 
     # Sort alphabetically for comparability if necessary.
-    if asort:
+    if sort == 'name':
         sortidx = np.argsort(names)
-        names = [names[i] for i in sortidx]
-        keys = [keys[i] for i in sortidx]
+    elif sort == 'freq':
+        # Whew lad, probably using the wrong data-structures for this use-case!
+        sortidx = [names.index(list(counters[0].keys())[idx]) for idx in np.argsort(list(counters[0].values()))[::-1]]
+    else:
+        sortidx = [names.index(name) for name in counters[0]]
+    names = [names[i] for i in sortidx]
+    keys = [keys[i] for i in sortidx]
 
     # Make all counts equal, inserting 0 for missing keys.
     counts = [np.array([c[k] for k in keys]) for c in counters]

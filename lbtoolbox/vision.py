@@ -7,7 +7,7 @@ try:
 
 
     def resize_img(img, shape=None, interp=None, is_chw=False):
-        """ Resize image.
+        """ Resize image, or copy if `shape` is `None` or same as `img`.
 
         Args:
             img: The image to be resized.
@@ -27,6 +27,9 @@ try:
 
         if is_chw:
             img = np.rollaxis(img, 0, 3)  # CHW to HWC
+
+        if img.shape[0] == shape[0] and img.shape[1] == shape[1]:
+            return np.array(img)
 
         img = cv2.resize(img, (shape[1], shape[0]), interpolation=interp)
 

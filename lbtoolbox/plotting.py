@@ -46,9 +46,14 @@ try:
             return
         if savedir is not None:
             savename = savename or datetime.now().isoformat()
+            assert not isinstance(fig, (tuple, list)), "Not implemented yet!"
             savefig(fig, pjoin(savedir, savename), pdf=False)
         clear_output(True)
-        display(fig)
+        if isinstance(fig, (tuple, list)):
+            for f in fig:
+                display(f)
+        else:
+            display(fig)
         plt.close()
 
 except ImportError:

@@ -84,7 +84,7 @@ class PreActBlock(nn.Module):
     Follows the implementation of "Identity Mappings in Deep Residual Networks" here:
     https://github.com/KaimingHe/resnet-1k-layers/blob/master/resnet-pre-act.lua
     """
-    def __init__(self, cin, cout=None, cmid=None, stride=1, downsample=None):
+    def __init__(self, cin, cout=None, cmid=None, stride=1, downsample=None, dropout=None):
         super(PreActBlock, self).__init__()
         cout = cout or cin
         cmid = cmid or cout
@@ -100,15 +100,15 @@ class PreActBlock(nn.Module):
         if (stride != 1 or cin != cout) and downsample in (True, None):
             self.downsample = conv1x1(cin, cout, stride)
 
-    def forward(self, x):
-        x = self.bn1(x)
-        x = self.relu(x)
+        self.dropout = nn.Dropout(dropout) if dropout else None
 
+    def forward(self, x):
         # Conv'ed branch
-        out = self.conv1(x)
-        out = self.bn2(out)
-        out = self.relu(out)
-        out = self.conv2(out)
+        out = x
+        if self.dropout is not None:
+            out = self.dropout(out)
+        out = self.conv1(self.relu(self.bn1(out)))
+        out = self.conv2(self.relu(self.bn2(out)))
 
         # Residual branch
         residual = x
@@ -135,7 +135,7 @@ class PreActBottleneck(nn.Module):
 
     Except it puts the stride on 3x3 conv when available.
     """
-    def __init__(self, cin, cout=None, cmid=None, stride=1, downsample=None):
+    def __init__(self, cin, cout=None, cmid=None, stride=1, downsample=None, dropout=None):
         super(PreActBottleneck, self).__init__()
         cout = cout or cin
         cmid = cmid or cout//4
@@ -153,23 +153,21 @@ class PreActBottleneck(nn.Module):
         if (stride != 1 or cin != cout) and downsample in (True, None):
             self.downsample = conv1x1(cin, cout, stride)
 
-    def forward(self, x):
-        x = self.bn1(x)
-        x = self.relu(x)
+        self.dropout = nn.Dropout(dropout) if dropout else None
 
+    def forward(self, x):
         # Conv'ed branch
-        out = self.conv1(x)
-        out = self.bn2(out)
-        out = self.relu(out)
-        out = self.conv2(out)
-        out = self.bn3(out)
-        out = self.relu(out)
-        out = self.conv3(out)
+        out = x
+        if self.dropout is not None:
+            out = self.dropout(out)
+        out = self.conv1(self.relu(self.bn1(out)))
+        out = self.conv2(self.relu(self.bn2(out)))
+        out = self.conv3(self.relu(self.bn3(out)))
 
         # Residual branch
         residual = x
         if self.downsample is not None:
-            residual = self.downsample(x)
+            residual = self.downsample(residual)
 
         return out + residual
 

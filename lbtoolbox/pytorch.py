@@ -125,6 +125,7 @@ class PreActBlock(nn.Module):
         # Not the default =(
         nn.init.constant(self.bn1.weight, 1)
         nn.init.constant(self.bn2.weight, 1)
+        return self
 
 
 class PreActBottleneck(nn.Module):
@@ -182,6 +183,7 @@ class PreActBottleneck(nn.Module):
         nn.init.constant(self.bn1.weight, 1)
         nn.init.constant(self.bn2.weight, 1)
         nn.init.constant(self.bn3.weight, 1)
+        return self
 
 
 class NeXtBlockC(nn.Module):
@@ -243,3 +245,4 @@ class NeXtBlockC(nn.Module):
         nn.init.constant(self.bn1.weight, 1)
         nn.init.constant(self.bn2.weight, 1)
         nn.init.constant(self.bn3.weight, 1)
+        return self

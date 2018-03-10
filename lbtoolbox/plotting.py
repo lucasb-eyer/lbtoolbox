@@ -239,6 +239,32 @@ def savefig(fig, name, ticksize=None, pdf=True, **kwargs):
 
 # Makes a more-or-less square grid of subplots holding
 # len(`what`) axes. kwargs are passed along to mpl's `subplots`.
+def imagegrid_for(what, axis=True, ncol=None, figsize=None, **igkw):
+    # That's kinda ugly, but I'm not sure of a better and more practical way yet!
+    if isinstance(what, tuple) and len(what) == 2 and all(isinstance(w, numbers.Integral) for w in what):
+        rows, cols = what
+        n = rows*cols
+    else:
+        try:
+            n = len(what)
+        except TypeError:
+            n = int(what)
+
+        ncol = int(np.ceil(np.sqrt(n))) if ncol is None else ncol
+        nrow = int(np.ceil(float(n)/ncol))
+
+    fig = plt.figure(figsize=figsize)
+    ig = ImageGrid(fig, 111, (nrow, ncol), **igkw)
+
+    # Remove redundant ones:
+    for i in range(1, nrow*ncol - n + 1):
+        fig.delaxes(ig.axes_all[-i])
+
+    return fig, ig
+
+
+# Makes a more-or-less square grid of subplots holding
+# len(`what`) axes. kwargs are passed along to mpl's `subplots`.
 def subplotgrid_for(what, axis=True, **kwargs):
     # That's kinda ugly, but I'm not sure of a better and more practical way yet!
     if isinstance(what, tuple) and len(what) == 2 and all(isinstance(w, numbers.Integral) for w in what):
@@ -267,19 +293,6 @@ def subplotgrid_for(what, axis=True, **kwargs):
         ax.set_adjustable('box-forced')
         if not axis:
             ax.axis('off')
-
-    return fig, axes
-
-
-def show_coefs(coefs, shape, names=repeat(None)):
-    fig, axes = subplotgrid_for(coefs, axis=False)
-    fig.suptitle('Learned coefficients of the classes', fontsize=16)
-
-    for coef, ax, name in zip(coefs, axes.flat, names):
-        if name is not None:
-            ax.set_title(name)
-        im = imshow(coef, ax, shape=shape)
-    fig.colorbar(im, ax=axes.ravel().tolist())
 
     return fig, axes
 

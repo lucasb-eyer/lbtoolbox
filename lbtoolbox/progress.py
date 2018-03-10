@@ -1,58 +1,104 @@
-#!/usr/bin/env python
+import lbtoolbox.util as lbu
 
-import uuid
-
-# Currently, this is ipy only!
-from IPython.display import HTML, Javascript, display, clear_output
-
-try:  # Py >= 3.3
-    from time import monotonic as monotime
-except ImportError:
-    from time import time as monotime
-
-class Progressbar(object):
-    code = """
-        <div style="position: relative; border: 1px solid black; width:500px; text-align:center">
-          <div id="{id}fill" style="background-color:#6BD1FB; width:{pct:.2%};">&nbsp;</div>
-          <div id="{id}text" style="position: absolute; top: 0; left: 0; right: 0;">{pct:.2%}</div>
-        </div>
-        """
-    upcode = "$('div#{id}fill').width('{pct:.2%}'); $('div#{id}text').text('{pct:.2%}');"
-
-    # Set clearing=False if your output also contains other IPython display objects.
-    # Set clearing=True if you'll have a huge number of updates over a long period of time.
-    # Set clearing=True to decrease memory usage.
-    # Increase mindt to decrease CPU load.
-    def __init__(self, a=1.0, b=None, mindt=1./30, clearing=True):
-        self.divid = str(uuid.uuid4())
-        self.zero = a if b is not None else 0.0
-        self.hundred = b if b is not None else a
-        self.curr = self.zero  # For relative update
-        self.clearing = clearing
-        self.t = 0
-        self.mindt = mindt
-        if not clearing:
-            display(HTML(Progressbar.code.format(id=self.divid, pct=0)))
-        self.update(self.curr)
-
-    def update(self, val=None):
-        if val is None:
-            self.curr += 1
-            val = self.curr
-
-        # Do not update too often, or the browsers will go crazy!
-        # Except for the last update.
-        t = monotime()
-        if abs(self.hundred - val) > 1e-4 and t - self.t < self.mindt:
-            return
-        self.t = t
-
-        v = float(val - self.zero)/(self.hundred - self.zero)
-        # Better than the js stuff, since the js stuff keeps adding and thus
-        # makes the browser insanely slow if there are >> 1k updates.
-        if self.clearing:
-            #clear_output(stdout=False, stderr=False, other=True)
-            clear_output(wait=True)
-            display(HTML(Progressbar.code.format(id=self.divid, pct=v)))
+def isnotebook():
+    try:
+        shell = get_ipython().__class__.__name__
+        if shell == 'ZMQInteractiveShell':  # Jupyter notebook or qtconsole?
+            return True
+        elif shell == 'TerminalInteractiveShell':  # Terminal running IPython?
+            return False
         else:
-            display(Javascript(Progressbar.upcode.format(id=self.divid, pct=v)))
+            return False  # Other type (?)
+    except NameError:
+        return False      # Probably standard Python interpreter
+
+
+if isnotebook():
+    from ipywidgets import IntProgress as _IntProgress
+    from IPython.display import display
+    ProgressBar = _IntProgress
+else:
+    import sys as _sys
+
+
+    def display(pb):
+        pb.render()
+
+
+    class ProgressBar:
+        def __init__(self, val=None, max=None, description=None):
+            self._val = val
+            self._max = max
+            self._desc = description
+            self._fmt = "{desc}, {v}/{max} ({pct:.2%})"
+
+        @property
+        def value(self):
+            return self._val
+
+        @value.setter
+        def value(self, val):
+            self._val = val
+            self.render()
+
+        @property
+        def max(self):
+            return self._max
+
+        @max.setter
+        def max(self, max):
+            self._max = max
+            self.render()
+
+        @property
+        def description(self):
+            return self._desc
+
+        @description.setter
+        def description(self, desc):
+            self._desc = desc
+            self.render()
+
+        def render(self):
+            pct = float(self.value)/float(self.max) if self.value is not None and self.max is not None else float('NaN')
+            _sys.stdout.write("\r" + self._fmt.format(desc=self.description, v=self.value, max=self.max, pct=pct))
+            _sys.stdout.flush()
+
+
+def update_progress(pb, val=None, max=None, description=None, inc=None):
+    if pb is None or pb is False:
+        return
+    elif pb is True:
+        pb = ProgressBar(val, max=max)
+        display(pb)
+
+    if val is not None:
+        pb.value = val
+    elif inc is not None:
+        pb.value += inc
+
+    if max is not None:
+        pb.max = max
+
+    if description is not None:
+        if hasattr(pb, '_lucas_prefix'):
+            pb.description = pb._lucas_prefix + description
+        else:
+            pb.description = description
+
+    return pb
+
+
+def progress(*iterables, tot=None, description=None, pb=True):
+    # Find the length of any of them if possible.
+    if tot is None:
+        for i in iterables:
+            try:
+                tot = max(len(i), tot or 0.0)
+            except TypeError:
+                pass
+
+    pb = update_progress(pb, val=0, max=tot, description=description)
+    for things in zip(*iterables):
+        yield lbu.maybetuple(things)
+        update_progress(pb, inc=1)

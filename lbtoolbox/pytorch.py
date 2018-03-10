@@ -244,3 +244,61 @@ class NeXtBlockC(nn.Module):
         nn.init.constant(self.bn2.weight, 1)
         nn.init.constant(self.bn3.weight, 1)
         return self
+
+
+class PreActNeXtBlockC(nn.Module):
+    """
+    My own "pre-activated" version of the ResNeXt block C.
+    """
+    def __init__(self, cin, cout=None, cmid=None, stride=1, downsample=None):
+        """
+        Now, cmid is (C, D) which means C convolutions on D channels in the bottleneck.
+        C == cardinality.
+        """
+        super(NeXtBlockC, self).__init__()
+        cout = cout or cin
+        C, D = cmid if isinstance(cmid, tuple) else ((cmid, cout//cmid//2) if cmid is not None else (4, cout//8))
+
+        self.bn1 = nn.BatchNorm2d(cin)
+        self.conv1 = conv1x1(cin, C*D)
+        self.bn2 = nn.BatchNorm2d(C*D)
+        self.conv2 = conv3x3(C*D, C*D, groups=C, stride=stride)
+        self.bn3 = nn.BatchNorm2d(C*D)
+        self.conv3 = conv1x1(C*D, cout)
+        self.relu = nn.ReLU(inplace=True)
+
+        self.stride = stride
+        self.downsample = downsample
+        if (stride != 1 or cin != cout) and downsample in (True, None):
+            self.downsample = nn.Sequential(OrderedDict([
+                ('bn', nn.BatchNorm2d(cin)),
+                ('relu', nn.ReLU(inplace=True)),
+                ('conv', conv1x1(cin, cout, stride)),
+            ]))
+            # TODO: They now optionally use strided, 0-padded identity (abusing avgpool) in the code.
+
+    def forward(self, x):
+        # Conv'ed branch
+        out = x
+        out = self.conv1(self.relu(self.bn1(out)))
+        out = self.conv2(self.relu(self.bn2(out)))
+        out = self.conv3(self.relu(self.bn3(out)))
+
+        # Residual branch
+        residual = x
+        if self.downsample is not None:
+            residual = self.downsample(x)
+
+        return out + residual
+
+    def reset_parameters(self):
+        # Following https://github.com/facebookresearch/ResNeXt/blob/master/models/resnext.lua#L208
+        nn.init.kaiming_normal(self.conv1.weight, a=0, mode='fan_out')
+        nn.init.kaiming_normal(self.conv2.weight, a=0, mode='fan_out')
+        nn.init.kaiming_normal(self.conv3.weight, a=0, mode='fan_out')
+
+        # Not the default =(
+        nn.init.constant(self.bn1.weight, 1)
+        nn.init.constant(self.bn2.weight, 1)
+        nn.init.constant(self.bn3.weight, 1)
+        return self

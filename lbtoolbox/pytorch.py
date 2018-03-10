@@ -62,6 +62,11 @@ class View(nn.Module):
             return x.view(x.size(0), *self._dims)
 
 
+def flatten(x):
+    """ Flattens all but the first dimension of `x`. """
+    return x.view(x.size(0), -1)
+
+
 ###############################################################################
 # Kaiming blocks
 

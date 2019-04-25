@@ -311,6 +311,102 @@ class Uninterrupt(object):
             self.orig_handlers = None
 
 
+class BackgroundFunction:
+    def __init__(self, function, prefetch_count, reseed=reseed, **kwargs):
+        """Parallelize a function to prefetch results using mutliple processes.
+        Args:
+            function: Function to be executed in parallel.
+            prefetch_count: Number of samples to prefetch.
+            resee: Function to call in each worker at init (usually to re-seed the RNG).
+            kwargs: Keyword args passed to the executed function.
+
+        I stole and extended this from:
+        https://github.com/Pandoro/tools/blob/master/utils.py
+        so we are even now :)
+        """
+        self.function = function
+        self.prefetch_count = prefetch_count
+        self.kwargs = kwargs
+        self.output_queue = multiprocessing.Queue(maxsize=prefetch_count)
+        self.procs = []
+        for i in range(self.prefetch_count):
+            p = multiprocessing.Process(
+                target=BackgroundFunction._compute_next,
+                args=(self.function, self.kwargs, self.output_queue, reseed))
+            p.daemon = True  # To ensure it is killed if the parent dies.
+            p.start()
+            self.procs.append(p)
+
+    def fill_status(self, normalize=False):
+        """Returns the fill status of the underlying queue.
+        Args:
+            normalize: If set to True, normalize the fill status by the max
+                queue size. Defaults to False.
+        Returns:
+            The possibly normalized fill status of the underlying queue.
+        """
+        return self.output_queue.qsize() / (self.prefetch_count if normalize else 1)
+
+    def __call__(self):
+        """Obtain one of the prefetched results or wait for one.
+        Returns:
+            The output of the provided function and the given keyword args.
+        """
+        output = self.output_queue.get(block=True)
+        return output
+
+    def __del__(self):
+        """Signal the processes to stop and join them."""
+        for p in self.procs:
+            p.terminate()
+            p.join()
+
+    def _compute_next(function, kwargs, output_queue, reseed):
+        """Helper function to do the actual computation in a non_blockig way.
+        Since this will always run in a new process, we ignore the interrupt
+        signal for the processes. This should be handled by the parent process
+        which kills the children when the object is deleted.
+        Some more discussion can be found here:
+        https://stackoverflow.com/questions/1408356/keyboard-interrupts-with-pythons-multiprocessing-pool
+        """
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+        # By default the random state is copied across processes.
+        reseed()
+        while True:
+            output_queue.put(function(**kwargs))
+
+
+def smooth(a, w, head=True, tail=True):
+    """ Matlab-like smooth
+
+    a: 1D array to be smoothed
+    w: smoothing window size, must be odd number.
+
+    Credit goes to https://stackoverflow.com/a/40443565/2366315
+    """
+    assert w % 2 == 1, 'Need odd window size!'
+    if len(a) < w:
+        return a  # TODO: Do something else sensible?
+    smoothed = _np.convolve(a, _np.ones(w, int), 'valid') / w
+
+    r = _np.arange(1, w-1, 2)
+    if head:
+        head = _np.cumsum(a[:w-1])[::2]/r
+        smoothed = _np.r_[head, smoothed]
+
+    if tail:
+        tail = (_np.cumsum(a[:-w:-1])[::2]/r)[::-1]
+        smoothed = _np.r_[smoothed, tail]
+
+    return smoothed
+
+
+def smooth2(y, w, head=False, tail=False):
+    x0 = 0 if head else w//2
+    x1 = len(y) if tail else len(y) - w//2
+    return np.arange(x0, x1), smooth(y, w)[x0:x1]
+
+
 def truncrandn_approx(lo, hi, *dims):
     """
     Sample values as specified by `dims` from normal distribution truncated to `[lo, hi]`.

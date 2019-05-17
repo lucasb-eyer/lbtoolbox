@@ -8,6 +8,21 @@ import signal
 import sys
 
 
+#try:
+#    import torch.multiprocessing as multiprocessing
+#    import torch
+#    def reseed():
+#        _np.random.seed()
+#        torch.manual_seed(_np.random.randint(2**32-1))
+#except ImportError:
+#    import multiprocessing
+#    def reseed():
+#        _np.random.seed()
+import multiprocessing
+def reseed():
+    _np.random.seed()
+
+
 def tuplize(what, lists=True, tuplize_none=False):
     """
     If `what` is a tuple, return it as-is, otherwise put it into a tuple.

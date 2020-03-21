@@ -26,6 +26,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import ImageGrid
 
 from os.path import join as pjoin
+from copy import deepcopy
 from datetime import datetime
 from itertools import chain, repeat, cycle
 import numbers
@@ -58,6 +59,38 @@ try:
 
 except ImportError:
     pass
+
+
+class LatexLookAlike:
+    """Context-manager for making plots inside it look like LaTeX."""
+    def __init__(self, fontsize=18, labelpad=4.0):
+        self._fontsize = fontsize
+        self._labelpad = labelpad
+
+    def __enter__(self):
+        self.old_k = deepcopy(mpl.colors.colorConverter.colors['k'])
+        mpl.colors.colorConverter.colors['k'] = (0, 0, 0)
+        mpl.colors.colorConverter.cache['k'] = (0, 0, 0)
+
+        # with plt.rc_context({...})
+        self.old = deepcopy(mpl.rcParams)
+        mpl.rcParams.update({
+            'font.size': self._fontsize,
+            'font.family': 'STIXGeneral',
+            #'mathtext.fontset': 'stix',
+            'mathtext.fontset': 'cm',
+            'text.color': 'black',
+            'xtick.color': 'black',
+            'ytick.color': 'black',
+            'text.color': 'black',
+            'axes.labelcolor': 'black',
+            'axes.labelpad': self._labelpad,
+        })
+
+    def __exit__(self, *a, **kw):
+        mpl.colors.colorConverter.colors['k'] = self.old_k
+        mpl.colors.colorConverter.cache['k'] = self.old_k
+        mpl.rcParams.update(self.old)
 
 
 def imshow_raw(im, ax=None, shape=None, bgr=False, colordim=2, *args, **kwargs):
@@ -259,6 +292,10 @@ def imagegrid_for(what, axis=True, ncol=None, figsize=None, **igkw):
     # Remove redundant ones:
     for i in range(1, nrow*ncol - n + 1):
         fig.delaxes(ig.axes_all[-i])
+
+    if not axis:
+        for ax in ig.axes_all:
+            ax.axis('off')
 
     return fig, ig
 
